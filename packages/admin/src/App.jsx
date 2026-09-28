@@ -2,8 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-do
 import { getToken } from './lib/api.js';
 import Login from './pages/Login.jsx';
 import Biens from './pages/Biens.jsx';
+import BienForm from './pages/BienForm.jsx';
 import Leads from './pages/Leads.jsx';
 import Settings from './pages/Settings.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 
 function ProtectedRoute({ children }) {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -16,6 +18,7 @@ function Shell({ children }) {
       <nav className="sidebar">
         <div className="sidebar-title">Immo Admin</div>
         <NavLink to="/" end>Biens</NavLink>
+        <NavLink to="/dashboard">Tableau de bord</NavLink>
         <NavLink to="/leads">Demandes</NavLink>
         <NavLink to="/settings">Réglages</NavLink>
         <button
@@ -43,6 +46,30 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Shell><Biens /></Shell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/biens/new"
+          element={
+            <ProtectedRoute>
+              <Shell><BienForm /></Shell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/biens/:id/edit"
+          element={
+            <ProtectedRoute>
+              <Shell><BienForm /></Shell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Shell><Dashboard /></Shell>
             </ProtectedRoute>
           }
         />

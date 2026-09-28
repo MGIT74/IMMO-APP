@@ -61,16 +61,50 @@ biensAdminRouter.get('/', async (req, res) => {
   res.json(withHonoraires);
 });
 
+biensAdminRouter.get('/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const bien = await prisma.bien.findUnique({
+    where: { id },
+    include: includeRelations,
+  });
+  if (!bien) return res.status(404).json({ error: 'Bien introuvable.' });
+
+  const taux = await getTauxForBien(bien);
+  res.json({ ...bien, likes: bien._count.likes, taux, honoraires: calcHonoraires(bien.prix, taux) });
+});
+
 biensAdminRouter.post('/', async (req, res) => {
-  const data = pickBienFields(req.body);
-  const bien = await prisma.bien.create({ data });
+  const { equipements, ...data } = pickBienFields(req.body);
+  const bien = await prisma.bien.create({
+    data: {
+      ...data,
+      equipements: equipements
+        ? { create: equipements.map((eq, i) => ({ icone: eq.icone, texte: eq.texte, ordre: i })) }
+        : undefined,
+    },
+    include: includeRelations,
+  });
   res.status(201).json(bien);
 });
 
 biensAdminRouter.put('/:id', async (req, res) => {
   const id = Number(req.params.id);
-  const data = pickBienFields(req.body);
-  const bien = await prisma.bien.update({ where: { id }, data });
+  const { equipements, ...data } = pickBienFields(req.body);
+
+  const updateData = { ...data };
+  if (equipements !== undefined) {
+    // On remplace entièrement la liste des équipements à chaque enregistrement.
+    updateData.equipements = {
+      deleteMany: {},
+      create: equipements.map((eq, i) => ({ icone: eq.icone, texte: eq.texte, ordre: i })),
+    };
+  }
+
+  const bien = await prisma.bien.update({
+    where: { id },
+    data: updateData,
+    include: includeRelations,
+  });
   res.json(bien);
 });
 
@@ -115,6 +149,9 @@ function pickBienFields(body) {
   const data = {};
   for (const key of allowed) {
     if (body[key] !== undefined) data[key] = body[key];
+  }
+  if (body.equipements !== undefined) {
+    data.equipements = body.equipements;
   }
   return data;
 }

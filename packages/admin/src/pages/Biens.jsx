@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
-
-const emptyForm = { titre: '', type: 'Appartement', prix: '', ville: '', codePostal: '', surface: '', pieces: '', chambres: '' };
 
 export default function Biens() {
   const [biens, setBiens] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const navigate = useNavigate();
 
   async function load() {
     setLoading(true);
@@ -34,47 +32,14 @@ export default function Biens() {
     load();
   }
 
-  async function handleCreate(e) {
-    e.preventDefault();
-    await api.createBien({
-      ...form,
-      prix: Number(form.prix) || 0,
-      surface: form.surface ? Number(form.surface) : null,
-      pieces: form.pieces ? Number(form.pieces) : null,
-      chambres: form.chambres ? Number(form.chambres) : null,
-    });
-    setForm(emptyForm);
-    setShowForm(false);
-    load();
-  }
-
   const totalHonoraires = biens.reduce((sum, b) => sum + (b.vendu ? b.honoraires : 0), 0);
 
   return (
     <div>
       <div className="page-header">
         <h1>Biens immobiliers</h1>
-        <button onClick={() => setShowForm((v) => !v)}>{showForm ? 'Annuler' : '+ Ajouter un bien'}</button>
+        <button onClick={() => navigate('/biens/new')}>+ Ajouter un bien</button>
       </div>
-
-      {showForm && (
-        <form onSubmit={handleCreate} className="card form-grid">
-          <input placeholder="Titre / nom de la résidence" value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} required />
-          <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-            <option>Appartement</option>
-            <option>Maison</option>
-            <option>Studio</option>
-            <option>Terrain</option>
-          </select>
-          <input type="number" placeholder="Prix (€)" value={form.prix} onChange={(e) => setForm({ ...form, prix: e.target.value })} required />
-          <input placeholder="Ville" value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} />
-          <input placeholder="Code postal" value={form.codePostal} onChange={(e) => setForm({ ...form, codePostal: e.target.value })} />
-          <input type="number" placeholder="Surface (m²)" value={form.surface} onChange={(e) => setForm({ ...form, surface: e.target.value })} />
-          <input type="number" placeholder="Pièces" value={form.pieces} onChange={(e) => setForm({ ...form, pieces: e.target.value })} />
-          <input type="number" placeholder="Chambres" value={form.chambres} onChange={(e) => setForm({ ...form, chambres: e.target.value })} />
-          <button type="submit">Créer le bien</button>
-        </form>
-      )}
 
       {loading ? (
         <p>Chargement...</p>
@@ -88,6 +53,7 @@ export default function Biens() {
                 <th>Bien</th>
                 <th>Prix</th>
                 <th>Honoraires</th>
+                <th>Likes</th>
                 <th>Statut</th>
                 <th>Actions</th>
               </tr>
@@ -96,7 +62,7 @@ export default function Biens() {
               {biens.map((bien) => (
                 <tr key={bien.id}>
                   <td>
-                    <strong>{bien.titre}</strong>
+                    <Link to={`/biens/${bien.id}/edit`}><strong>{bien.titre}</strong></Link>
                     <div className="muted">{bien.ville}{bien.type ? ` · ${bien.type}` : ''}</div>
                   </td>
                   <td>{Number(bien.prix).toLocaleString('fr-FR')} €</td>
@@ -104,6 +70,7 @@ export default function Biens() {
                     {Number(bien.honoraires).toLocaleString('fr-FR')} €
                     {bien.tauxPerso != null && <div className="muted">{bien.taux}% perso</div>}
                   </td>
+                  <td>♥ {bien.likes}</td>
                   <td>
                     {bien.vendu && <span className="badge badge-red">Vendu</span>}
                     {!bien.publie && <span className="badge badge-grey">Masqué</span>}
@@ -112,6 +79,7 @@ export default function Biens() {
                   <td className="actions">
                     <button onClick={() => handleToggleVendu(bien.id)}>{bien.vendu ? '✓ Vendu' : 'Marquer vendu'}</button>
                     <button onClick={() => handleTogglePublie(bien.id)}>{bien.publie ? 'Masquer' : 'Afficher'}</button>
+                    <Link to={`/biens/${bien.id}/edit`}><button type="button">Modifier</button></Link>
                     <button className="danger" onClick={() => handleDelete(bien.id)}>Supprimer</button>
                   </td>
                 </tr>

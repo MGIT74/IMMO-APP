@@ -108,3 +108,38 @@ button.danger { background: #e53935; }
 .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
 .login-card { background: #fff; padding: 32px; border-radius: 16px; width: 320px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
 .login-card input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+
+.equip-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.equip-row select { padding: 8px; border: 1px solid var(--border); border-radius: 8px; }
+.equip-row input { padding: 8px; border: 1px solid var(--border); border-radius: 8px; }
+.equip-row .muted { flex: 1; font-style: italic; }
+
+.photo-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.photo-thumb { position: relative; width: 110px; }
+.photo-thumb img { width: 110px; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+.photo-thumb-actions { display: flex; gap: 4px; margin-top: 4px; }
+.photo-thumb-actions button { flex: 1; padding: 4px; font-size: 11px; }
+
+.upload-label {
+	display: inline-block;
+	background: #fff;
+	border: 1px dashed var(--border);
+	border-radius: 8px;
+	padding: 10px 16px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.stat-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; }
+.stat-value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+
+.hbar-row { display: grid; grid-template-columns: 130px 1fr 30px; align-items: center; gap: 10px; margin-bottom: 10px; }
+.hbar-track { background: var(--bg); border-radius: 6px; height: 10px; overflow: hidden; }
+.hbar-fill { height: 100%; background: var(--dark); border-radius: 6px; }
+.hbar-count { text-align: right; font-weight: 700; font-size: 12px; }
+
+.lead-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.lead-row:last-child { border-bottom: none; }

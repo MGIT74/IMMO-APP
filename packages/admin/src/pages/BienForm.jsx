@@ -1,0 +1,237 @@
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { api } from '../lib/api.js';
+import { ICON_LABELS, formatEquip, hasValueField } from '../lib/equipements.js';
+
+const emptyBien = {
+  titre: '', type: 'Appartement', prix: '', ville: '', codePostal: '',
+  surface: '', pieces: '', chambres: '',
+  etatTexte: '', etatCouleur: '#43a047', etatAnim: 'none', livraison: '',
+  tauxPerso: '', boutonTexte: '', boutonUrl: '',
+};
+
+export default function BienForm() {
+  const { id } = useParams();
+  const isNew = !id;
+  const navigate = useNavigate();
+
+  const [bien, setBien] = useState(emptyBien);
+  const [equipements, setEquipements] = useState([{ icone: 'salle_bain', valeur: '', texte: formatEquip('salle_bain', '') }]);
+  const [photos, setPhotos] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!isNew) {
+      api.getBien(id).then((data) => {
+        setBien({
+          titre: data.titre || '', type: data.type || '', prix: data.prix ?? '',
+          ville: data.ville || '', codePostal: data.codePostal || '',
+          surface: data.surface ?? '', pieces: data.pieces ?? '', chambres: data.chambres ?? '',
+          etatTexte: data.etatTexte || '', etatCouleur: data.etatCouleur || '#43a047',
+          etatAnim: data.etatAnim || 'none', livraison: data.livraison || '',
+          tauxPerso: data.tauxPerso ?? '', boutonTexte: data.boutonTexte || '', boutonUrl: data.boutonUrl || '',
+        });
+        setEquipements(
+          data.equipements?.length
+            ? data.equipements.map((eq) => ({ icone: eq.icone, valeur: '', texte: eq.texte }))
+            : []
+        );
+        setPhotos(data.photos || []);
+      });
+    }
+  }, [id, isNew]);
+
+  function updateField(key, value) {
+    setBien((b) => ({ ...b, [key]: value }));
+  }
+
+  function updateEquipIcon(index, icone) {
+    setEquipements((rows) =>
+      rows.map((row, i) => (i === index ? { icone, valeur: '', texte: formatEquip(icone, '') } : row))
+    );
+  }
+
+  function updateEquipValeur(index, valeur) {
+    setEquipements((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, valeur, texte: formatEquip(row.icone, valeur) } : row))
+    );
+  }
+
+  function addEquipRow() {
+    setEquipements((rows) => [...rows, { icone: 'salle_bain', valeur: '', texte: formatEquip('salle_bain', '') }]);
+  }
+
+  function removeEquipRow(index) {
+    setEquipements((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true);
+
+    const payload = {
+      ...bien,
+      prix: Number(bien.prix) || 0,
+      surface: bien.surface !== '' ? Number(bien.surface) : null,
+      pieces: bien.pieces !== '' ? Number(bien.pieces) : null,
+      chambres: bien.chambres !== '' ? Number(bien.chambres) : null,
+      tauxPerso: bien.tauxPerso !== '' ? Number(bien.tauxPerso) : null,
+      equipements: equipements
+        .filter((eq) => eq.texte.trim() !== '')
+        .map((eq) => ({ icone: eq.icone, texte: eq.texte })),
+    };
+
+    if (isNew) {
+      const created = await api.createBien(payload);
+      setSaving(false);
+      navigate(`/biens/${created.id}/edit`);
+    } else {
+      await api.updateBien(id, payload);
+      setSaving(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  }
+
+  async function handleUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const photo = await api.uploadPhoto(id, file);
+    setPhotos((p) => [...p, photo]);
+    setUploading(false);
+    e.target.value = '';
+  }
+
+  async function handleDeletePhoto(photoId) {
+    await api.deletePhoto(photoId);
+    setPhotos((p) => p.filter((ph) => ph.id !== photoId));
+  }
+
+  async function movePhoto(index, direction) {
+    const newPhotos = [...photos];
+    const target = index + direction;
+    if (target < 0 || target >= newPhotos.length) return;
+    [newPhotos[index], newPhotos[target]] = [newPhotos[target], newPhotos[index]];
+    setPhotos(newPhotos);
+    await api.reorderPhotos(id, newPhotos.map((p) => p.id));
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h1>{isNew ? 'Ajouter un bien' : `Modifier : ${bien.titre || '...'}`}</h1>
+        <Link to="/">← Retour à la liste</Link>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="card">
+          <h2>Détails du bien</h2>
+          <div className="form-grid">
+            <input placeholder="Titre / nom de la résidence" value={bien.titre} onChange={(e) => updateField('titre', e.target.value)} required />
+            <select value={bien.type} onChange={(e) => updateField('type', e.target.value)}>
+              <option>Appartement</option>
+              <option>Maison</option>
+              <option>Studio</option>
+              <option>Terrain</option>
+              <option>Local commercial</option>
+              <option>Parking</option>
+            </select>
+            <input type="number" placeholder="Prix (€)" value={bien.prix} onChange={(e) => updateField('prix', e.target.value)} required />
+            <input placeholder="Ville" value={bien.ville} onChange={(e) => updateField('ville', e.target.value)} />
+            <input placeholder="Code postal" value={bien.codePostal} onChange={(e) => updateField('codePostal', e.target.value)} />
+            <input type="number" placeholder="Surface (m²)" value={bien.surface} onChange={(e) => updateField('surface', e.target.value)} />
+            <input type="number" placeholder="Pièces" value={bien.pieces} onChange={(e) => updateField('pieces', e.target.value)} />
+            <input type="number" placeholder="Chambres" value={bien.chambres} onChange={(e) => updateField('chambres', e.target.value)} />
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>État du bien</h2>
+          <div className="form-grid">
+            <input placeholder="Texte de l'état (ex : Livrée)" value={bien.etatTexte} onChange={(e) => updateField('etatTexte', e.target.value)} />
+            <input type="color" value={bien.etatCouleur} onChange={(e) => updateField('etatCouleur', e.target.value)} title="Couleur du point" />
+            <select value={bien.etatAnim} onChange={(e) => updateField('etatAnim', e.target.value)}>
+              <option value="none">Aucune animation</option>
+              <option value="blink">Clignote</option>
+              <option value="pulse">Onde autour du point</option>
+            </select>
+            <input placeholder="Texte de livraison (ex : Livraison T3 2026)" value={bien.livraison} onChange={(e) => updateField('livraison', e.target.value)} />
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Équipements</h2>
+          {equipements.map((row, i) => (
+            <div key={i} className="equip-row">
+              <select value={row.icone} onChange={(e) => updateEquipIcon(i, e.target.value)}>
+                {Object.entries(ICON_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+              {hasValueField(row.icone) && (
+                <input
+                  placeholder="1"
+                  value={row.valeur}
+                  onChange={(e) => updateEquipValeur(i, e.target.value)}
+                  style={{ width: 70 }}
+                />
+              )}
+              <span className="muted">{row.texte}</span>
+              <button type="button" className="danger" onClick={() => removeEquipRow(i)}>✕</button>
+            </div>
+          ))}
+          <button type="button" onClick={addEquipRow}>+ Ajouter un équipement</button>
+        </div>
+
+        <div className="card">
+          <h2>Bouton lien externe (optionnel)</h2>
+          <div className="form-grid">
+            <input placeholder="Texte du bouton" value={bien.boutonTexte} onChange={(e) => updateField('boutonTexte', e.target.value)} />
+            <input placeholder="URL" value={bien.boutonUrl} onChange={(e) => updateField('boutonUrl', e.target.value)} />
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Taux d'honoraires personnalisé (optionnel)</h2>
+          <input
+            type="number" step="0.1" min="0" max="100" placeholder="Laisser vide pour utiliser le taux général"
+            value={bien.tauxPerso} onChange={(e) => updateField('tauxPerso', e.target.value)}
+            style={{ width: 260 }}
+          />
+        </div>
+
+        <button type="submit" disabled={saving}>{saving ? 'Enregistrement...' : 'Enregistrer'}</button>
+        {saved && <span className="success" style={{ marginLeft: 12 }}>Enregistré !</span>}
+      </form>
+
+      <div className="card">
+        <h2>Photos</h2>
+        {isNew ? (
+          <p className="muted">Enregistrez d'abord le bien pour pouvoir ajouter des photos.</p>
+        ) : (
+          <>
+            <div className="photo-grid">
+              {photos.map((photo, i) => (
+                <div key={photo.id} className="photo-thumb">
+                  <img src={photo.url.startsWith('http') ? photo.url : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${photo.url}`} alt="" />
+                  <div className="photo-thumb-actions">
+                    <button type="button" onClick={() => movePhoto(i, -1)} disabled={i === 0}>←</button>
+                    <button type="button" onClick={() => movePhoto(i, 1)} disabled={i === photos.length - 1}>→</button>
+                    <button type="button" className="danger" onClick={() => handleDeletePhoto(photo.id)}>✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <label className="upload-label">
+              {uploading ? 'Envoi...' : '+ Ajouter une photo'}
+              <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
+            </label>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

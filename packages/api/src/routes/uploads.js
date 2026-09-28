@@ -55,3 +55,17 @@ uploadsRouter.delete('/:photoId', async (req, res) => {
   await prisma.photo.delete({ where: { id: photo.id } });
   res.status(204).end();
 });
+
+// Réordonne les photos d'un bien : body = { order: [photoId1, photoId2, ...] }
+uploadsRouter.put('/:bienId/order', async (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order)) return res.status(400).json({ error: '"order" doit être un tableau d\'ids.' });
+
+  await Promise.all(
+    order.map((photoId, index) =>
+      prisma.photo.update({ where: { id: Number(photoId) }, data: { ordre: index } })
+    )
+  );
+
+  res.json({ ok: true });
+});

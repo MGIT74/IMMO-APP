@@ -11,18 +11,25 @@ if (!bien) {
 
 const badgeTexte = bien.vendu ? 'Vendu' : bien.etatTexte;
 const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
+const badgeAnim = bien.vendu ? '' : (bien.etatAnim === 'blink' ? 'is-blink' : bien.etatAnim === 'pulse' ? 'is-pulse' : '');
 ---
 <Layout title={bien.titre}>
 	<div class="container" style="max-width: 700px;">
 		<div class="immo-card" style="cursor:default;">
 			<div class="immo-hero">
-				{bien.photos?.[0] && <img src={bien.photos[0].url} alt={bien.titre} />}
+				<div class="immo-hero-slides">
+					{bien.photos?.length > 0 ? (
+						bien.photos.map((photo, i) => (
+							<img src={photo.url} alt={bien.titre} class={`immo-hero-slide ${i === 0 ? 'is-active' : ''}`} />
+						))
+					) : null}
+				</div>
 				<div class="immo-hero-shade immo-hero-shade-top"></div>
 				<div class="immo-hero-shade immo-hero-shade-bottom"></div>
 
 				{badgeTexte && (
 					<div class="immo-badge">
-						<span class="immo-badge-dot" style={`--c:${badgeCouleur}`}></span>
+						<span class:list={["immo-badge-dot", badgeAnim]} style={`--c:${badgeCouleur}`}></span>
 						<span>{badgeTexte}</span>
 					</div>
 				)}
@@ -38,6 +45,14 @@ const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
 						{bien.pieces && <div class="immo-hero-pieces">{bien.pieces} pièce{bien.pieces > 1 ? 's' : ''}</div>}
 					</div>
 				</div>
+
+				{bien.photos?.length > 1 && (
+					<div class="immo-hero-dots" id="hero-dots">
+						{bien.photos.map((_, i) => (
+							<button type="button" data-i={i} class={i === 0 ? 'is-active' : ''}></button>
+						))}
+					</div>
+				)}
 			</div>
 
 			<div class="immo-body">
@@ -84,6 +99,16 @@ const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
 	</div>
 
 	<script define:vars={{ API_URL, bienId: bien.id }}>
+		// --- Carrousel photo ---
+		const slides = document.querySelectorAll('.immo-hero-slide');
+		const dots = document.querySelectorAll('#hero-dots button');
+		dots.forEach((dot, i) => {
+			dot.addEventListener('click', () => {
+				slides.forEach((s, si) => s.classList.toggle('is-active', si === i));
+				dots.forEach((d, di) => d.classList.toggle('is-active', di === i));
+			});
+		});
+
 		// --- Bouton like : identifiant anonyme stocké en localStorage ---
 		let visitorId = localStorage.getItem('immo_visitor_id');
 		if (!visitorId) {

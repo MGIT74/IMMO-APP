@@ -66,14 +66,14 @@ Connectez-vous sur l'admin avec l'email/mot de passe défini dans `packages/api/
 ## Ce qui est prêt
 
 - Schéma de base de données complet (biens, photos, équipements, demandes, likes, réglages)
-- API : authentification, CRUD des biens, demandes, likes, réglages, upload de photos (redimensionnement automatique)
-- Site public : liste des biens, fiche détaillée, formulaire de demande, bouton like
-- Admin : connexion, CRM (créer un bien, marquer vendu/masquer/supprimer), liste des demandes, réglages du taux d'honoraires
+- API : authentification, CRUD des biens (avec équipements imbriqués), demandes, likes, réglages, upload/suppression/réordonnancement de photos (redimensionnement automatique)
+- Site public : liste des biens, fiche détaillée avec **carrousel photo** et **badge d'état animé** (clignote/onde), formulaire de demande, bouton like
+- Admin : connexion, **Vue CRM** (créer/modifier/supprimer un bien, marquer vendu/masquer en un clic), **formulaire d'édition complet** (état, équipements avec génération automatique du texte, photos avec réordonnancement), **Tableau de bord** (statistiques, répartition par état, dernières demandes), liste des demandes, réglages du taux d'honoraires (général + personnalisé par bien)
 
 ## Prochaines étapes suggérées
 
-- Formulaire d'édition complet d'un bien dans l'admin (actuellement : création simple ; l'édition des champs avancés — état, badge, équipements, photos — se fait pour l'instant via l'API directement, une UI est à construire)
-- Gestion des photos dans l'admin (upload + réordonnancement, la route API existe déjà)
-- Slider de photos et badge d'état animé sur le site public (logique déjà présente dans le plugin WordPress, à porter dans les composants Astro)
-- Tableau de bord avec statistiques (comme sur le plugin WordPress)
 - Publication automatique Instagram / Facebook (module à part, nécessite OAuth Meta + tâches planifiées)
+- Slider en boucle infinie sur la page d'accueil (grille de biens), comme sur le plugin WordPress
+- Export CSV des demandes
+- Filtres (ville, type, prix) sur la liste publique des biens
+

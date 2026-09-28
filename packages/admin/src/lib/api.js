@@ -38,6 +38,7 @@ export const api = {
     }).then((r) => r.json()),
 
   getBiens: () => request('/api/admin/biens'),
+  getBien: (id) => request(`/api/admin/biens/${id}`),
   createBien: (data) => request('/api/admin/biens', { method: 'POST', body: JSON.stringify(data) }),
   updateBien: (id, data) => request(`/api/admin/biens/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteBien: (id) => request(`/api/admin/biens/${id}`, { method: 'DELETE' }),
@@ -58,6 +59,9 @@ export const api = {
       body: formData,
     }).then((r) => r.json());
   },
+  deletePhoto: (photoId) => request(`/api/admin/uploads/${photoId}`, { method: 'DELETE' }),
+  reorderPhotos: (bienId, order) =>
+    request(`/api/admin/uploads/${bienId}/order`, { method: 'PUT', body: JSON.stringify({ order }) }),
 };
 
 export { API_URL, getToken };

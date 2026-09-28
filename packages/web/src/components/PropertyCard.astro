@@ -3,6 +3,7 @@ const { bien } = Astro.props;
 const photo = bien.photos?.[0]?.url;
 const badgeTexte = bien.vendu ? 'Vendu' : bien.etatTexte;
 const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
+const badgeAnim = bien.vendu ? '' : (bien.etatAnim === 'blink' ? 'is-blink' : bien.etatAnim === 'pulse' ? 'is-pulse' : '');
 ---
 
 <a href={`/biens/${bien.id}`} class="immo-card">
@@ -13,7 +14,7 @@ const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
 
 		{badgeTexte && (
 			<div class="immo-badge">
-				<span class="immo-badge-dot" style={`--c:${badgeCouleur}`}></span>
+				<span class:list={["immo-badge-dot", badgeAnim]} style={`--c:${badgeCouleur}`}></span>
 				<span>{badgeTexte}</span>
 			</div>
 		)}
