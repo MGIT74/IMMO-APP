@@ -1,0 +1,42 @@
+---
+const { bien } = Astro.props;
+const photo = bien.photos?.[0]?.url;
+const badgeTexte = bien.vendu ? 'Vendu' : bien.etatTexte;
+const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
+---
+
+<a href={`/biens/${bien.id}`} class="immo-card">
+	<div class="immo-hero">
+		{photo ? <img src={photo} alt={bien.titre} /> : null}
+		<div class="immo-hero-shade immo-hero-shade-top"></div>
+		<div class="immo-hero-shade immo-hero-shade-bottom"></div>
+
+		{badgeTexte && (
+			<div class="immo-badge">
+				<span class="immo-badge-dot" style={`--c:${badgeCouleur}`}></span>
+				<span>{badgeTexte}</span>
+			</div>
+		)}
+
+		<div class="immo-hero-top">
+			<div class="immo-hero-name">{bien.titre}</div>
+			{bien.ville && <div class="immo-hero-location">{bien.ville}{bien.codePostal ? ` - ${bien.codePostal}` : ''}</div>}
+		</div>
+
+		<div class="immo-hero-bottom">
+			<div>
+				<div class="immo-hero-price">{Number(bien.prix).toLocaleString('fr-FR')} €</div>
+				{bien.pieces && <div class="immo-hero-pieces">{bien.pieces} pièce{bien.pieces > 1 ? 's' : ''}</div>}
+			</div>
+		</div>
+	</div>
+
+	<div class="immo-body">
+		{bien.type && <div class="immo-type">{bien.type}</div>}
+		<div class="immo-stats">
+			{bien.surface && <span>📐 {bien.surface} m²</span>}
+			{bien.pieces && <span>🚪 {bien.pieces} pièces</span>}
+			{bien.chambres && <span>🛏️ {bien.chambres} chambres</span>}
+		</div>
+	</div>
+</a>

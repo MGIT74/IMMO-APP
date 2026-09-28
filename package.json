@@ -1,0 +1,16 @@
+{
+  "name": "immo-app",
+  "private": true,
+  "workspaces": [
+    "packages/api",
+    "packages/web",
+    "packages/admin"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=packages/api",
+    "dev:web": "npm run dev --workspace=packages/web",
+    "dev:admin": "npm run dev --workspace=packages/admin",
+    "db:migrate": "npm run db:migrate --workspace=packages/api",
+    "db:seed": "npm run db:seed --workspace=packages/api"
+  }
+}

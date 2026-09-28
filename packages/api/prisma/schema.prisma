@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Le seul compte admin (toi). On garde un modèle User plutôt qu'un login en dur
+// pour pouvoir changer le mot de passe ou ajouter un second compte plus tard.
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Bien {
+  id        Int      @id @default(autoincrement())
+  titre     String // nom de la résidence, ex "Perle du lac"
+  type      String? // Appartement, Maison, Studio...
+  prix      Float    @default(0)
+  ville     String?
+  codePostal String?
+  surface   Float?
+  pieces    Int?
+  chambres  Int?
+
+  // État affiché sur la carte (Livrée, En construction...)
+  etatTexte    String?
+  etatCouleur  String? @default("#43a047")
+  etatAnim     String? @default("none") // none | blink | pulse
+  livraison    String? // texte libre, ex "Livraison T3 2026"
+
+  vendu     Boolean  @default(false)
+  publie    Boolean  @default(true) // false = masqué du site public
+
+  // Taux d'honoraires personnalisé ; si null, on utilise le taux général (Setting)
+  tauxPerso Float?
+
+  // Bouton lien externe optionnel affiché dans le détail
+  boutonTexte String?
+  boutonUrl   String?
+
+  photos    Photo[]
+  equipements Equipement[]
+  leads     Lead[]
+  likes     Like[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Photo {
+  id       Int    @id @default(autoincrement())
+  bienId   Int
+  bien     Bien   @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  url      String // chemin relatif, ex /uploads/bien-3/photo1.jpg
+  ordre    Int    @default(0)
+}
+
+model Equipement {
+  id     Int    @id @default(autoincrement())
+  bienId Int
+  bien   Bien   @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  icone  String // clé d'icône, ex "salle_bain", "piscine"...
+  texte  String // texte affiché, ex "1 Salle de bain"
+  ordre  Int    @default(0)
+}
+
+model Lead {
+  id        Int      @id @default(autoincrement())
+  bienId    Int?
+  bien      Bien?    @relation(fields: [bienId], references: [id], onDelete: SetNull)
+  nom       String
+  email     String?
+  tel       String?
+  message   String?  @db.Text
+  source    String   @default("site") // site | webhook
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  bienId    Int
+  bien      Bien     @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  // Identifie un visiteur sans compte (empreinte simple, ex cookie anonyme)
+  visitorId String
+  createdAt DateTime @default(now())
+
+  @@unique([bienId, visitorId])
+}
+
+// Réglages généraux clé/valeur (taux d'honoraires par défaut, etc.)
+model Setting {
+  key   String @id
+  value String
+}

@@ -1,0 +1,136 @@
+---
+import Layout from '../../components/Layout.astro';
+import { getBien, API_URL } from '../../lib/api.js';
+
+const { id } = Astro.params;
+const bien = await getBien(id);
+
+if (!bien) {
+	return Astro.redirect('/');
+}
+
+const badgeTexte = bien.vendu ? 'Vendu' : bien.etatTexte;
+const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
+---
+<Layout title={bien.titre}>
+	<div class="container" style="max-width: 700px;">
+		<div class="immo-card" style="cursor:default;">
+			<div class="immo-hero">
+				{bien.photos?.[0] && <img src={bien.photos[0].url} alt={bien.titre} />}
+				<div class="immo-hero-shade immo-hero-shade-top"></div>
+				<div class="immo-hero-shade immo-hero-shade-bottom"></div>
+
+				{badgeTexte && (
+					<div class="immo-badge">
+						<span class="immo-badge-dot" style={`--c:${badgeCouleur}`}></span>
+						<span>{badgeTexte}</span>
+					</div>
+				)}
+
+				<div class="immo-hero-top">
+					<div class="immo-hero-name">{bien.titre}</div>
+					{bien.ville && <div class="immo-hero-location">{bien.ville}{bien.codePostal ? ` - ${bien.codePostal}` : ''}</div>}
+				</div>
+
+				<div class="immo-hero-bottom">
+					<div>
+						<div class="immo-hero-price">{Number(bien.prix).toLocaleString('fr-FR')} €</div>
+						{bien.pieces && <div class="immo-hero-pieces">{bien.pieces} pièce{bien.pieces > 1 ? 's' : ''}</div>}
+					</div>
+				</div>
+			</div>
+
+			<div class="immo-body">
+				<div style="display:flex;justify-content:space-between;align-items:center;">
+					{bien.type && <div class="immo-type">{bien.type}</div>}
+					<button class="likes-btn" id="like-btn" data-bien-id={bien.id}>
+						♥ <span id="like-count">{bien.likes || 0}</span>
+					</button>
+				</div>
+
+				{bien.livraison && <p>📅 {bien.livraison}</p>}
+
+				<div class="immo-stats">
+					{bien.surface && <span>📐 {bien.surface} m²</span>}
+					{bien.pieces && <span>🚪 {bien.pieces} pièces</span>}
+					{bien.chambres && <span>🛏️ {bien.chambres} chambres</span>}
+				</div>
+
+				{bien.equipements?.length > 0 && (
+					<div class="immo-equip-list">
+						{bien.equipements.map((eq) => <div>• {eq.texte}</div>)}
+					</div>
+				)}
+
+				<form id="lead-form">
+					<input type="hidden" name="bienId" value={bien.id} />
+					<input type="text" name="website" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" />
+					<h3>Demander des informations</h3>
+					<input type="text" name="nom" placeholder="Votre nom" required style="width:100%;padding:10px;margin:6px 0;" />
+					<input type="email" name="email" placeholder="Votre email" style="width:100%;padding:10px;margin:6px 0;" />
+					<input type="tel" name="tel" placeholder="Votre téléphone" style="width:100%;padding:10px;margin:6px 0;" />
+					<textarea name="message" placeholder="Message (optionnel)" style="width:100%;padding:10px;margin:6px 0;"></textarea>
+					<button type="submit" class="immo-btn-primary">Envoyer ma demande</button>
+					<p id="lead-feedback"></p>
+				</form>
+
+				{bien.boutonTexte && bien.boutonUrl && (
+					<a href={bien.boutonUrl} target="_blank" rel="noopener noreferrer" class="immo-btn-primary" style="background:transparent;color:var(--immo-dark);border:1px solid #ddd;">
+						{bien.boutonTexte}
+					</a>
+				)}
+			</div>
+		</div>
+	</div>
+
+	<script define:vars={{ API_URL, bienId: bien.id }}>
+		// --- Bouton like : identifiant anonyme stocké en localStorage ---
+		let visitorId = localStorage.getItem('immo_visitor_id');
+		if (!visitorId) {
+			visitorId = crypto.randomUUID();
+			localStorage.setItem('immo_visitor_id', visitorId);
+		}
+
+		const likeBtn = document.getElementById('like-btn');
+		const likeCount = document.getElementById('like-count');
+		if (localStorage.getItem(`immo_liked_${bienId}`) === '1') {
+			likeBtn.classList.add('is-liked');
+		}
+
+		likeBtn.addEventListener('click', async () => {
+			const res = await fetch(`${API_URL}/api/likes/${bienId}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ visitorId }),
+			});
+			const data = await res.json();
+			likeCount.textContent = data.count;
+			likeBtn.classList.toggle('is-liked', data.liked);
+			localStorage.setItem(`immo_liked_${bienId}`, data.liked ? '1' : '0');
+		});
+
+		// --- Formulaire de demande ---
+		const form = document.getElementById('lead-form');
+		const feedback = document.getElementById('lead-feedback');
+
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const formData = new FormData(form);
+			const payload = Object.fromEntries(formData.entries());
+
+			const res = await fetch(`${API_URL}/api/leads`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			});
+
+			if (res.ok) {
+				feedback.textContent = 'Merci ! Votre demande a bien été envoyée.';
+				form.reset();
+			} else {
+				const data = await res.json();
+				feedback.textContent = data.error || 'Une erreur est survenue.';
+			}
+		});
+	</script>
+</Layout>

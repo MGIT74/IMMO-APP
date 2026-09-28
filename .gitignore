@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+packages/api/uploads/*
+!packages/api/uploads/.gitkeep
+packages/web/.astro/
