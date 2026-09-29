@@ -14,157 +14,254 @@ const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
 const badgeAnim = bien.vendu ? '' : (bien.etatAnim === 'blink' ? 'is-blink' : bien.etatAnim === 'pulse' ? 'is-pulse' : '');
 const photos = bien.photos || [];
 const plans = bien.plans || [];
-const description = bien.description || `${bien.type || 'Bien'} à ${bien.ville || ''}${bien.codePostal ? ' - ' + bien.codePostal : ''}.`;
+
+const fullDesc = bien.description || `${bien.type || 'Bien'} à ${bien.ville || ''}${bien.codePostal ? ' - ' + bien.codePostal : ''}.`;
+const DESC_LIMIT = 240;
+const hasMore = fullDesc.length > DESC_LIMIT;
+const shortDesc = hasMore ? fullDesc.slice(0, DESC_LIMIT).replace(/\s+\S*$/, '') + '…' : fullDesc;
+
+const icon = (paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const ICONS = {
+	logo: icon('<path d="M4 21V10l8-6.5L20 10v11"/><path d="M9.5 21v-6h5v6"/>'),
+	search: icon('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+	heart: icon('<path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.5-6.6 5 5 0 1 1 7.5 6.6Z"/>'),
+	building: icon('<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2m2 0h2M9 11h2m2 0h2M9 15h2m2 0h2"/><path d="M10.5 21v-3h3v3"/>'),
+	chat: icon('<path d="M21 12a8 8 0 0 1-8 8H4l2.3-2.9A8 8 0 1 1 21 12Z"/>'),
+	bank: icon('<path d="m3 10 9-6 9 6"/><path d="M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 21h18M3 18h18"/>'),
+	share: icon('<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="m8.3 10.8 7.4-3.6m-7.4 6 7.4 3.6"/>'),
+	shield: icon('<path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3Z"/><path d="m9.2 12 2 2 3.6-4"/>'),
+	image: icon('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-4.5-4.5L9 19"/>'),
+	plan: icon('<path d="M3 5.5 9 3.5l6 2 6-2V18.5l-6 2-6-2-6 2V5.5Z"/><path d="M9 3.5v17M15 5.5v17"/>'),
+	star: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.5 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.3l6.5-.9L12 2.5Z"/></svg>`,
+	pool: icon('<path d="M2 15c2 0 2 1.5 4 1.5S8 15 10 15s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M2 19c2 0 2 1.5 4 1.5S8 19 10 19s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M6 12V6a2 2 0 0 1 4 0m4 6V6a2 2 0 0 1 4 0M6 8h8"/>'),
+	umbrella: icon('<path d="M12 2a9 9 0 0 0-9 9h18a9 9 0 0 0-9-9Z"/><path d="M12 11v7a2 2 0 0 0 4 0"/><path d="M12 2v2"/>'),
+	car: icon('<path d="M5 11.5 6.3 7A2 2 0 0 1 8.2 5.5h7.6A2 2 0 0 1 17.7 7L19 11.5"/><rect x="3" y="11.5" width="18" height="6" rx="1.5"/><path d="M6.5 20v-2.5m11 2.5v-2.5"/><circle cx="7.3" cy="14.5" r=".8" fill="currentColor"/><circle cx="16.7" cy="14.5" r=".8" fill="currentColor"/>'),
+	flower: icon('<path d="M12 21v-7"/><circle cx="12" cy="9" r="4.5"/><path d="M12 9c2.2-1.6 4.4-2.2 6.6-1.7M12 9c-2.2-1.6-4.4-2.2-6.6-1.7"/>'),
+	douche: icon('<path d="M4 21v-.5c0-2 .9-3.5 3-3.5h10c2.1 0 3 1.5 3 3.5V21"/><path d="M7 17V7a3 3 0 0 1 6 0"/><path d="M9.5 11.5h.01m3 0h.01M9 14.5h.01m3 0h.01"/>'),
+	wc: icon('<path d="M8 21V3m-2.5 0v5H8m5 13V3a3 3 0 0 1 3 3v5h-3"/>'),
+	balcon: icon('<path d="M3 21h18M4 9v12m16-12v12M4 9h16M4 13h16m-8-4v8"/><path d="M7 9V6a2.5 2.5 0 0 1 5 0v3"/>'),
+	parking: icon('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9.5 16v-8h2.7a2.4 2.4 0 0 1 0 4.8H9.5"/>'),
+	lift: icon('<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M12 3v18M8.5 9 10 7l1.5 2M15.5 15 14 17l-1.5-2"/>'),
+	box: icon('<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>'),
+	euro: icon('<path d="M16.5 7.7A4.8 4.8 0 1 0 16.5 16.3M5.5 10.3h6m-6 3.4h6"/>'),
+};
+const AMENITY_ICONS = {
+	piscine: ICONS.pool,
+	terrasse: ICONS.umbrella,
+	garage: ICONS.car,
+	jardin: ICONS.flower,
+	salle_bain: ICONS.douche,
+	salle_eau: ICONS.douche,
+	toilettes: ICONS.wc,
+	balcon: ICONS.balcon,
+	parking: ICONS.parking,
+	generic: ICONS.euro,
+};
+const amenityIcon = (k) => AMENITY_ICONS[k] || AMENITY_ICONS.generic;
+const AMENITIES_VISIBLE = 6;
+const equipements = bien.equipements || [];
+const moreAmenities = Math.max(equipements.length - AMENITIES_VISIBLE, 0);
 ---
-<Layout title={bien.titre}>
-	<div class="detail-wrap">
-		<!-- Colonne photo -->
-		<div class="detail-gallery">
-			<div class="detail-gallery-main">
-				<div class="detail-slides">
+<Layout title={bien.titre} chrome="bare">
+	<div class="dl-shell">
+		<div class="dl-card">
+			<!-- Rail latéral -->
+			<aside class="dl-rail">
+				<a href="/" class="dl-rail-btn dl-rail-logo" aria-label="Accueil" set:html={ICONS.logo} />
+				<a href="/" class="dl-rail-btn" aria-label="Voir tous les biens" title="Voir tous les biens" set:html={ICONS.search} />
+				<button type="button" class="dl-rail-btn js-like" aria-label="Aimer ce bien" title="Aimer ce bien" set:html={ICONS.heart} />
+				<a href="/luxury" class="dl-rail-btn" aria-label="Collection Luxury" title="Collection Luxury" set:html={ICONS.building} />
+				<button type="button" class="dl-rail-btn" id="rail-contact" aria-label="Demander des informations" title="Demander des informations" set:html={ICONS.chat} />
+				<a href="/#achat" class="dl-rail-btn" aria-label="Acheter" title="Acheter" set:html={ICONS.bank} />
+				<span class="dl-rail-spacer"></span>
+				<a href="/mentions-legales" class="dl-rail-btn" aria-label="Mentions légales" title="Mentions légales" set:html={ICONS.shield} />
+				<a href="tel:0660560200" class="dl-rail-avatar-link" aria-label="Appeler Eric">
+					<img src="https://ambassadeur-immo.com/wp-content/uploads/2026/05/ERIC-PROFIL.jpeg" alt="Eric" class="dl-rail-avatar" />
+				</a>
+			</aside>
+
+			<!-- Panneau média -->
+			<section class="dl-media">
+				<div class="dl-view" id="view-photos">
 					{photos.length > 0 ? (
-						photos.map((p, i) => (
-							<img src={p.url} alt={bien.titre} class={`detail-slide ${i === 0 ? 'is-active' : ''}`} />
-						))
+						photos.map((p, i) => <img src={p.url} alt={bien.titre} class={`dl-media-img ${i === 0 ? 'is-active' : ''}`} />)
 					) : (
-						<div class="detail-slide-placeholder"></div>
+						<div class="dl-noimg"></div>
 					)}
 				</div>
 
+				{plans.length > 0 && (
+					<div class="dl-view" id="view-plans" hidden={photos.length > 0}>
+						{plans.map((plan, i) => (
+							<iframe
+								src={`${plan.url}#toolbar=0&view=FitH&navpanes=0`}
+								title={plan.label}
+								loading="lazy"
+								class={`dl-plan-frame ${i === 0 ? 'is-active' : ''}`}
+							></iframe>
+						))}
+					</div>
+				)}
+
 				{badgeTexte && (
-					<div class="detail-badge">
-						<span class:list={["detail-badge-dot", badgeAnim]} style={`--c:${badgeCouleur}`}></span>
+					<div class="dl-badge">
+						<span class:list={["dl-badge-dot", badgeAnim]} style={`--c:${badgeCouleur}`}></span>
 						<span>{badgeTexte}</span>
 					</div>
 				)}
 
-				<div class="detail-icon-actions">
-					<button type="button" class="detail-icon-btn" id="like-btn" data-bien-id={bien.id} aria-label="Aimer ce bien">♥</button>
-					<button type="button" class="detail-icon-btn" id="share-btn" aria-label="Partager">⤴</button>
+				{(plans.length > 0) && (
+					<div class="dl-viewtoggle" role="group" aria-label="Changer de vue">
+						<button type="button" class="is-active" data-view="photos" aria-label="Voir les photos" set:html={photos.length > 0 ? ICONS.image : ICONS.plan} />
+						{plans.length > 0 && <button type="button" data-view="plans" aria-label="Voir les plans" set:html={ICONS.plan} />}
+					</div>
+				)}
+
+				<div class="dl-shade-bottom"></div>
+				<div class="dl-price-box">
+					<div class="dl-price-label">{bien.livraison ? 'Livraison' : 'Prix'}</div>
+					<div class="dl-price-value">{Number(bien.prix).toLocaleString('fr-FR')} €</div>
+					{bien.livraison && <div class="dl-livraison">{bien.livraison}</div>}
 				</div>
 
 				{photos.length > 1 && (
-					<div class="detail-dots" id="detail-dots">
-						{photos.map((_, i) => <button type="button" data-i={i} class={i === 0 ? 'is-active' : ''}></button>)}
+					<div class="dl-dots" id="dl-photo-dots">
+						{photos.map((_, i) => <button type="button" data-i={i} class={i === 0 ? 'is-active' : ''} aria-label={`Photo ${i + 1}`}></button>)}
 					</div>
 				)}
-			</div>
+			</section>
 
-			{photos.length > 1 && (
-				<div class="detail-thumbs">
-					{photos.map((p, i) => (
-						<img src={p.url} alt="" class={`detail-thumb ${i === 0 ? 'is-active' : ''}`} data-i={i} />
-					))}
-				</div>
-			)}
-		</div>
-
-		<!-- Colonne infos -->
-		<div class="detail-info">
-			<div class="detail-info-top">
-				<div>
-					<h1>{bien.titre}</h1>
-					{bien.ville && <p class="detail-location">📍 {bien.ville}{bien.codePostal ? ` - ${bien.codePostal}` : ''}</p>}
-				</div>
-				<div class="detail-like-count">
-					<span id="like-count">{bien.likes || 0}</span> ♥
-				</div>
-			</div>
-
-			<p class="detail-desc" id="detail-desc">{description}</p>
-
-			<div class="detail-price-row">
-				<div class="detail-price">{Number(bien.prix).toLocaleString('fr-FR')} €</div>
-				{bien.livraison && <div class="detail-livraison">📅 {bien.livraison}</div>}
-			</div>
-
-			<div class="detail-stats">
-				{bien.surface && <div class="detail-stat"><span class="detail-stat-value">{bien.surface}</span><span class="detail-stat-label">m²</span></div>}
-				{bien.pieces && <div class="detail-stat"><span class="detail-stat-value">{bien.pieces}</span><span class="detail-stat-label">pièces</span></div>}
-				{bien.chambres && <div class="detail-stat"><span class="detail-stat-value">{bien.chambres}</span><span class="detail-stat-label">chambres</span></div>}
-			</div>
-
-			{bien.type && <p class="detail-type">{bien.type}</p>}
-
-			{bien.equipements?.length > 0 && (
-				<div class="detail-section">
-					<h2>Équipements</h2>
-					<div class="detail-amenities">
-						{bien.equipements.map((eq) => <div class="detail-amenity">✓ {eq.texte}</div>)}
+			<!-- Panneau infos -->
+			<section class="dl-info">
+				<div class="dl-top-row">
+					<div class="dl-top-actions">
+						<button type="button" class="dl-round js-like" id="like-btn" data-count={bien.likes || 0} aria-label="Aimer ce bien" set:html={ICONS.heart} />
+						<button type="button" class="dl-round" id="share-btn" aria-label="Partager" set:html={ICONS.share} />
 					</div>
+					<button type="button" class="dl-cta" id="open-lead-form">Demander des informations</button>
 				</div>
-			)}
 
-			{plans.length > 0 && (
-				<div class="detail-section">
-					<h2>Plans</h2>
-					<div class="detail-plans">
-						{plans.map((plan) => (
-							<div class="detail-plan-card">
-								<div class="detail-plan-label">{plan.label}</div>
-								<iframe src={`${plan.url}#toolbar=0&view=FitH`} title={plan.label} loading="lazy"></iframe>
-								<a href={plan.url} target="_blank" rel="noopener noreferrer" class="detail-plan-link">Ouvrir en plein écran ↗</a>
-							</div>
-						))}
+				<h1 class="dl-title">{bien.titre}</h1>
+				{bien.ville && <p class="dl-loc">{bien.ville}{bien.codePostal ? `, ${bien.codePostal}` : ''}</p>}
+
+				<p class="dl-desc" id="dl-desc">{shortDesc}</p>
+				{hasMore && <button type="button" class="dl-readmore" id="dl-readmore" data-full={fullDesc}>Lire plus</button>}
+
+				<div class="dl-stats">
+					{bien.chambres && <div class="dl-stat"><b>{bien.chambres}</b><span>{bien.chambres > 1 ? 'chambres' : 'chambre'}</span></div>}
+					{bien.pieces && <div class="dl-stat"><b>{bien.pieces}</b><span>{bien.pieces > 1 ? 'pièces' : 'pièce'}</span></div>}
+					{bien.surface && <div class="dl-stat"><b>{new Intl.NumberFormat('fr-FR').format(bien.surface)}</b><span>m²</span></div>}
+				</div>
+
+				{equipements.length > 0 && (
+					<div class="dl-section">
+						<h3 class="dl-h3">Équipements</h3>
+						<div class="dl-amenities" id="dl-amenities">
+							{equipements.map((eq, i) => (
+								<div class:list={["dl-amenity", i >= AMENITIES_VISIBLE && 'is-hidden']}>
+									<span class="dl-amenity-icon" set:html={amenityIcon(eq.icone)} />
+									<span>{eq.texte}</span>
+								</div>
+							))}
+						</div>
+						{moreAmenities > 0 && (
+							<button type="button" class="dl-amenities-more" id="dl-amenities-more">
+								Afficher les {moreAmenities} autres équipements
+							</button>
+						)}
 					</div>
-				</div>
-			)}
+				)}
 
-			<div class="detail-cta">
-				<button type="button" class="btn-primary detail-cta-btn" id="open-lead-form">Demander des informations</button>
+				{plans.length > 0 && (
+					<div class="dl-section">
+						<h3 class="dl-h3">Plans</h3>
+						<div class="dl-plans">
+							{plans.map((plan) => (
+								<div class="dl-plan-card">
+									<div class="dl-plan-label">{plan.label}</div>
+									<iframe src={`${plan.url}#toolbar=0&view=FitH&navpanes=0`} title={plan.label} loading="lazy"></iframe>
+									<a href={plan.url} target="_blank" rel="noopener noreferrer" class="dl-plan-open">Ouvrir le PDF ↗</a>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
+				<div class="dl-contact">
+					<img src="https://ambassadeur-immo.com/wp-content/uploads/2026/05/ERIC-PROFIL.jpeg" alt="Eric, Ambassadeur Bkeys" />
+					<div class="dl-contact-id">
+						<div class="dl-contact-name">Eric</div>
+						<div class="dl-contact-sub">Ambassadeur Bkeys</div>
+						<div class="dl-contact-stars" aria-label="5 étoiles">
+							{Array.from({ length: 5 }).map(() => <span set:html={ICONS.star} />)}
+						</div>
+					</div>
+					<a href="tel:0660560200" class="dl-contact-btn">Contacter</a>
+				</div>
+
 				{bien.boutonTexte && bien.boutonUrl && (
-					<a href={bien.boutonUrl} target="_blank" rel="noopener noreferrer" class="detail-cta-secondary">{bien.boutonTexte}</a>
+					<a href={bien.boutonUrl} target="_blank" rel="noopener noreferrer" class="dl-cta-secondary">{bien.boutonTexte} ↗</a>
 				)}
-			</div>
 
-			<form id="lead-form" class="detail-lead-form">
-				<input type="hidden" name="bienId" value={bien.id} />
-				<input type="text" name="website" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" />
-				<h3>Demander des informations</h3>
-				<input type="text" name="nom" placeholder="Votre nom" required />
-				<input type="email" name="email" placeholder="Votre email" />
-				<input type="tel" name="tel" placeholder="Votre téléphone" />
-				<textarea name="message" placeholder="Message (optionnel)"></textarea>
-				<button type="submit" class="btn-primary">Envoyer ma demande</button>
-				<p id="lead-feedback"></p>
-			</form>
+				<form id="lead-form" class="dl-lead-form">
+					<input type="hidden" name="bienId" value={bien.id} />
+					<input type="text" name="website" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" />
+					<h3>Votre demande</h3>
+					<input type="text" name="nom" placeholder="Votre nom" required />
+					<input type="email" name="email" placeholder="Votre email" />
+					<input type="tel" name="tel" placeholder="Votre téléphone" />
+					<textarea name="message" placeholder="Votre message (optionnel)"></textarea>
+					<button type="submit" class="dl-cta dl-cta-submit">Envoyer ma demande</button>
+					<p id="lead-feedback" class="dl-feedback"></p>
+				</form>
+			</section>
 		</div>
 	</div>
 
 	<script define:vars={{ API_URL, bienId: bien.id }}>
-		// --- Carrousel photo (points + vignettes synchronisés) ---
-		const slides = document.querySelectorAll('.detail-slide');
-		const dots = document.querySelectorAll('#detail-dots button');
-		const thumbs = document.querySelectorAll('.detail-thumb');
+		// --- Vue photos / plans ---
+		const toggle = document.querySelector('.dl-viewtoggle');
+		if (toggle) {
+			toggle.querySelectorAll('button').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					toggle.querySelectorAll('button').forEach((b) => b.classList.toggle('is-active', b === btn));
+					document.getElementById('view-photos').hidden = btn.dataset.view !== 'photos';
+					const plansView = document.getElementById('view-plans');
+					if (plansView) plansView.hidden = btn.dataset.view !== 'plans';
+				});
+			});
+		}
 
+		// --- Carrousel photo ---
+		const slides = document.querySelectorAll('.dl-media-img');
+		const dots = document.querySelectorAll('#dl-photo-dots button');
 		function showSlide(i) {
 			slides.forEach((s, si) => s.classList.toggle('is-active', si === i));
 			dots.forEach((d, di) => d.classList.toggle('is-active', di === i));
-			thumbs.forEach((t, ti) => t.classList.toggle('is-active', ti === i));
 		}
 		dots.forEach((dot, i) => dot.addEventListener('click', () => showSlide(i)));
-		thumbs.forEach((thumb, i) => thumb.addEventListener('click', () => showSlide(i)));
 
-		// --- Bouton like ---
+		// --- Like (rail + pastille synchronisés) ---
 		let visitorId = localStorage.getItem('immo_visitor_id');
 		if (!visitorId) {
 			visitorId = crypto.randomUUID();
 			localStorage.setItem('immo_visitor_id', visitorId);
 		}
-		const likeBtn = document.getElementById('like-btn');
-		const likeCount = document.getElementById('like-count');
-		if (localStorage.getItem(`immo_liked_${bienId}`) === '1') likeBtn.classList.add('is-liked');
-
-		likeBtn.addEventListener('click', async () => {
-			const res = await fetch(`${API_URL}/api/likes/${bienId}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ visitorId }),
+		const likeBtns = document.querySelectorAll('.js-like');
+		if (localStorage.getItem('immo_liked_' + bienId) === '1') {
+			likeBtns.forEach((b) => b.classList.add('is-liked'));
+		}
+		likeBtns.forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const res = await fetch(API_URL + '/api/likes/' + bienId, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ visitorId }),
+				});
+				const data = await res.json();
+				likeBtns.forEach((b) => b.classList.toggle('is-liked', data.liked));
+				localStorage.setItem('immo_liked_' + bienId, data.liked ? '1' : '0');
 			});
-			const data = await res.json();
-			likeCount.textContent = data.count;
-			likeBtn.classList.toggle('is-liked', data.liked);
-			localStorage.setItem(`immo_liked_${bienId}`, data.liked ? '1' : '0');
 		});
 
 		// --- Partage ---
@@ -177,24 +274,47 @@ const description = bien.description || `${bien.type || 'Bien'} à ${bien.ville 
 			}
 		});
 
-		// --- Ouvrir/scroller vers le formulaire ---
-		document.getElementById('open-lead-form').addEventListener('click', () => {
-			document.getElementById('lead-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
-		});
+		// --- Lire plus ---
+		const readmore = document.getElementById('dl-readmore');
+		if (readmore) {
+			readmore.addEventListener('click', () => {
+				document.getElementById('dl-desc').textContent = readmore.dataset.full;
+				readmore.remove();
+			});
+		}
+
+		// --- Afficher plus d'équipements ---
+		const moreBtn = document.getElementById('dl-amenities-more');
+		if (moreBtn) {
+			moreBtn.addEventListener('click', () => {
+				document.querySelectorAll('#dl-amenities .dl-amenity.is-hidden').forEach((el) => el.classList.remove('is-hidden'));
+				moreBtn.remove();
+			});
+		}
+
+		// --- Ouvrir le formulaire (CTA + icône du rail) ---
+		const form = document.getElementById('lead-form');
+		const openForm = () => {
+			form.classList.add('is-open');
+			form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			form.querySelector('input[name="nom"]')?.focus();
+		};
+		document.getElementById('open-lead-form').addEventListener('click', openForm);
+		document.getElementById('rail-contact').addEventListener('click', openForm);
 
 		// --- Formulaire de demande ---
-		const form = document.getElementById('lead-form');
 		const feedback = document.getElementById('lead-feedback');
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
 			const payload = Object.fromEntries(new FormData(form).entries());
-			const res = await fetch(`${API_URL}/api/leads`, {
+			const res = await fetch(API_URL + '/api/leads', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload),
 			});
 			if (res.ok) {
 				feedback.textContent = 'Merci ! Votre demande a bien été envoyée.';
+				feedback.classList.add('is-ok');
 				form.reset();
 			} else {
 				const data = await res.json();
