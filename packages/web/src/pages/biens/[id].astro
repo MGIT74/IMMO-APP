@@ -65,21 +65,6 @@ const moreAmenities = Math.max(equipements.length - AMENITIES_VISIBLE, 0);
 <Layout title={bien.titre} chrome="bare">
 	<div class="dl-shell">
 		<div class="dl-card">
-			<!-- Rail latéral -->
-			<aside class="dl-rail">
-				<a href="/" class="dl-rail-btn dl-rail-logo" aria-label="Accueil" set:html={ICONS.logo} />
-				<a href="/" class="dl-rail-btn" aria-label="Voir tous les biens" title="Voir tous les biens" set:html={ICONS.search} />
-				<button type="button" class="dl-rail-btn js-like" aria-label="Aimer ce bien" title="Aimer ce bien" set:html={ICONS.heart} />
-				<a href="/luxury" class="dl-rail-btn" aria-label="Collection Luxury" title="Collection Luxury" set:html={ICONS.building} />
-				<button type="button" class="dl-rail-btn" id="rail-contact" aria-label="Demander des informations" title="Demander des informations" set:html={ICONS.chat} />
-				<a href="/#achat" class="dl-rail-btn" aria-label="Acheter" title="Acheter" set:html={ICONS.bank} />
-				<span class="dl-rail-spacer"></span>
-				<a href="/mentions-legales" class="dl-rail-btn" aria-label="Mentions légales" title="Mentions légales" set:html={ICONS.shield} />
-				<a href="tel:0660560200" class="dl-rail-avatar-link" aria-label="Appeler Eric">
-					<img src="https://ambassadeur-immo.com/wp-content/uploads/2026/05/ERIC-PROFIL.jpeg" alt="Eric" class="dl-rail-avatar" />
-				</a>
-			</aside>
-
 			<!-- Panneau média -->
 			<section class="dl-media">
 				<div class="dl-view" id="view-photos">
@@ -300,7 +285,6 @@ const moreAmenities = Math.max(equipements.length - AMENITIES_VISIBLE, 0);
 			form.querySelector('input[name="nom"]')?.focus();
 		};
 		document.getElementById('open-lead-form').addEventListener('click', openForm);
-		document.getElementById('rail-contact').addEventListener('click', openForm);
 
 		// --- Formulaire de demande ---
 		const feedback = document.getElementById('lead-feedback');

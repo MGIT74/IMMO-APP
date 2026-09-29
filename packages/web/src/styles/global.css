@@ -134,68 +134,22 @@ body {
 	position: fixed;
 	inset: 0;
 	display: grid;
-	place-items: center;
-	padding: 22px;
-	background: var(--immo-bg);
+	background: var(--immo-white);
 }
 
 .dl-card {
 	display: grid;
-	grid-template-columns: 80px 1.05fr 1fr;
-	width: min(1280px, 100%);
-	height: min(860px, 100%);
+	grid-template-columns: 1.05fr 1fr;
+	width: 100%;
+	height: 100vh;
+	height: 100dvh;
 	background: var(--immo-white);
-	border-radius: 28px;
+	border-radius: 0;
 	overflow: hidden;
-	box-shadow: 0 30px 80px rgba(0, 0, 0, 0.18);
-}
-
-/* --- Rail latéral --- */
-.dl-rail {
-	grid-column: 1;
-	background: #0b0b0b;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 6px;
-	padding: 20px 0;
-}
-
-.dl-rail-btn {
-	width: 46px;
-	height: 46px;
-	border-radius: 14px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #bdbdbd;
-	background: none;
-	border: none;
-	cursor: pointer;
-	text-decoration: none;
-	transition: background .15s ease, color .15s ease;
-}
-.dl-rail-btn svg { width: 21px; height: 21px; }
-.dl-rail-btn:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
-.dl-rail-btn.is-liked { color: #ff5b5b; }
-
-.dl-rail-logo { color: #fff; margin-bottom: 14px; }
-.dl-rail-logo svg { width: 24px; height: 24px; }
-
-.dl-rail-spacer { flex: 1; }
-
-.dl-rail-avatar-link { margin-top: 6px; display: block; }
-.dl-rail-avatar {
-	width: 38px;
-	height: 38px;
-	border-radius: 50%;
-	object-fit: cover;
-	display: block;
-	border: 2px solid rgba(255, 255, 255, 0.25);
 }
 
 /* --- Panneau média --- */
-.dl-media { grid-column: 2; position: relative; overflow: hidden; background: #101010; }
+.dl-media { grid-column: 1; position: relative; overflow: hidden; background: #101010; }
 
 .dl-view { position: absolute; inset: 0; }
 .dl-view[hidden] { display: none; }
@@ -322,7 +276,7 @@ body {
 
 /* --- Panneau infos --- */
 .dl-info {
-	grid-column: 3;
+	grid-column: 2;
 	padding: 30px 40px 36px;
 	overflow-y: auto;
 	scrollbar-width: thin;
@@ -508,22 +462,14 @@ body {
 .dl-feedback.is-ok { color: #1b7f3b; }
 
 @media (max-width: 1080px) {
-	.dl-shell { position: static; padding: 0; background: #fff; }
+	.dl-shell { position: static; }
 	.dl-card {
-		grid-template-columns: 64px 1fr;
+		grid-template-columns: 1fr;
 		grid-template-rows: 56vh auto;
-		width: 100%;
 		height: auto;
-		border-radius: 0;
-		box-shadow: none;
 	}
-	.dl-rail { flex-direction: row; grid-column: 1 / -1; grid-row: 1; padding: 8px 12px; gap: 2px; }
-	.dl-rail-btn { width: 40px; height: 40px; border-radius: 12px; }
-	.dl-rail-logo { margin-bottom: 0; margin-right: 8px; }
-	.dl-rail-spacer { flex: 1; }
-	.dl-rail-avatar { width: 30px; height: 30px; }
-	.dl-media { grid-column: 1 / -1; grid-row: 2; min-height: 56vh; }
-	.dl-info { grid-column: 1 / -1; grid-row: 3; padding: 26px 20px 32px; overflow: visible; }
+	.dl-media { grid-column: 1; grid-row: 1; min-height: 56vh; }
+	.dl-info { grid-column: 1; grid-row: 2; padding: 26px 20px 32px; overflow: visible; }
 	.dl-amenities { grid-template-columns: 1fr; }
 	.dl-price-box { left: 20px; bottom: 18px; }
 	.dl-dots { right: 20px; bottom: 18px; }
