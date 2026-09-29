@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-const { title = 'Ambassadeur Immo', description = '' } = Astro.props;
+const { title = 'Ambassadeur Immo', description = '', theme = 'light' } = Astro.props;
 ---
 <!doctype html>
 <html lang="fr">
@@ -10,7 +10,7 @@ const { title = 'Ambassadeur Immo', description = '' } = Astro.props;
 	<title>{title}</title>
 	{description && <meta name="description" content={description} />}
 </head>
-<body>
+<body class:list={[theme === 'dark' ? 'theme-dark' : '']}>
 	<header class="site-header">
 		<a href="/" class="logo">Ambassadeur<span>immo</span></a>
 		<nav>
@@ -19,6 +19,7 @@ const { title = 'Ambassadeur Immo', description = '' } = Astro.props;
 			<a href="/#bkeys">Bkeys</a>
 			<a href="/#vente">Vente</a>
 			<a href="/#achat">Achat</a>
+			<a href="/luxury" class="nav-luxury">Luxury</a>
 		</nav>
 		<a href="tel:0660560200" class="call-btn">Appelez-moi</a>
 	</header>

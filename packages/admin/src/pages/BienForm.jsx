@@ -7,7 +7,7 @@ const emptyBien = {
   titre: '', type: 'Appartement', prix: '', ville: '', codePostal: '',
   surface: '', pieces: '', chambres: '',
   etatTexte: '', etatCouleur: '#43a047', etatAnim: 'none', livraison: '',
-  tauxPerso: '', boutonTexte: '', boutonUrl: '',
+  tauxPerso: '', boutonTexte: '', boutonUrl: '', luxe: false,
 };
 
 export default function BienForm() {
@@ -32,6 +32,7 @@ export default function BienForm() {
           etatTexte: data.etatTexte || '', etatCouleur: data.etatCouleur || '#43a047',
           etatAnim: data.etatAnim || 'none', livraison: data.livraison || '',
           tauxPerso: data.tauxPerso ?? '', boutonTexte: data.boutonTexte || '', boutonUrl: data.boutonUrl || '',
+          luxe: !!data.luxe,
         });
         setEquipements(
           data.equipements?.length
@@ -78,6 +79,7 @@ export default function BienForm() {
       pieces: bien.pieces !== '' ? Number(bien.pieces) : null,
       chambres: bien.chambres !== '' ? Number(bien.chambres) : null,
       tauxPerso: bien.tauxPerso !== '' ? Number(bien.tauxPerso) : null,
+      luxe: !!bien.luxe,
       equipements: equipements
         .filter((eq) => eq.texte.trim() !== '')
         .map((eq) => ({ icone: eq.icone, texte: eq.texte })),
@@ -146,6 +148,10 @@ export default function BienForm() {
             <input type="number" placeholder="Pièces" value={bien.pieces} onChange={(e) => updateField('pieces', e.target.value)} />
             <input type="number" placeholder="Chambres" value={bien.chambres} onChange={(e) => updateField('chambres', e.target.value)} />
           </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+            <input type="checkbox" checked={bien.luxe} onChange={(e) => updateField('luxe', e.target.checked)} style={{ width: 'auto' }} />
+            ✨ Bien de luxe (apparaît dans la section "Luxury" du site, design noir)
+          </label>
         </div>
 
         <div className="card">

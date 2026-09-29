@@ -1,0 +1,38 @@
+---
+import Layout from '../components/Layout.astro';
+import { getBiens } from '../lib/api.js';
+
+const biens = await getBiens();
+const biensLuxe = biens.filter((b) => b.luxe);
+---
+<Layout title="Luxury — Ambassadeur Immo" theme="dark">
+	<section class="luxury-hero">
+		<p class="luxury-eyebrow">— SÉLECTION EXCLUSIVE —</p>
+		<h1>Luxury</h1>
+		<p class="luxury-sub">Une sélection de biens d'exception, choisis pour leur emplacement, leurs prestations et leur caractère unique.</p>
+	</section>
+
+	<section class="section">
+		{biensLuxe.length === 0 ? (
+			<p class="luxury-empty">Aucun bien de la sélection Luxury pour le moment.</p>
+		) : (
+			<div class="luxury-grid">
+				{biensLuxe.map((bien) => (
+					<a href={`/biens/${bien.id}`} class="luxury-card">
+						{bien.photos?.[0] && <img src={bien.photos[0].url} alt={bien.titre} />}
+						<div class="luxury-card-body">
+							<h2>{bien.titre}</h2>
+							{bien.ville && <p class="luxury-location">{bien.ville}{bien.codePostal ? ` - ${bien.codePostal}` : ''}</p>}
+							<p class="luxury-price">{Number(bien.prix).toLocaleString('fr-FR')} €</p>
+							<div class="luxury-stats">
+								{bien.surface && <span>{bien.surface} m²</span>}
+								{bien.pieces && <span>{bien.pieces} pièces</span>}
+								{bien.chambres && <span>{bien.chambres} chambres</span>}
+							</div>
+						</div>
+					</a>
+				))}
+			</div>
+		)}
+	</section>
+</Layout>

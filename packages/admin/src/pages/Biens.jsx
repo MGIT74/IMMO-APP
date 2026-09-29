@@ -74,7 +74,8 @@ export default function Biens() {
                   <td>
                     {bien.vendu && <span className="badge badge-red">Vendu</span>}
                     {!bien.publie && <span className="badge badge-grey">Masqué</span>}
-                    {!bien.vendu && bien.publie && <span className="badge badge-grey">—</span>}
+                    {bien.luxe && <span className="badge badge-gold">✨ Luxe</span>}
+                    {!bien.vendu && bien.publie && !bien.luxe && <span className="badge badge-grey">—</span>}
                   </td>
                   <td className="actions">
                     <button onClick={() => handleToggleVendu(bien.id)}>{bien.vendu ? '✓ Vendu' : 'Marquer vendu'}</button>

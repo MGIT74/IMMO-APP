@@ -143,7 +143,7 @@ biensAdminRouter.patch('/:id/publie', async (req, res) => {
 function pickBienFields(body) {
   const allowed = [
     'titre', 'type', 'prix', 'ville', 'codePostal', 'surface', 'pieces', 'chambres',
-    'etatTexte', 'etatCouleur', 'etatAnim', 'livraison', 'vendu', 'publie',
+    'etatTexte', 'etatCouleur', 'etatAnim', 'livraison', 'vendu', 'publie', 'luxe',
     'tauxPerso', 'boutonTexte', 'boutonUrl',
   ];
   const data = {};

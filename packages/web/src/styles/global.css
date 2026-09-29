@@ -219,3 +219,75 @@ body {
 .footer-phone { font-size: 20px; font-weight: 700; color: #fff; margin-top: 8px; }
 .footer-copy { text-align: center; color: #777; font-size: 12px; margin-top: 40px; }
 @media (max-width: 700px) { .footer-inner { grid-template-columns: repeat(2, 1fr); } }
+
+/* --- Thème sombre (page Luxury) --- */
+body.theme-dark {
+	background: #0b0b0b;
+	color: #ece4d3;
+}
+body.theme-dark .site-header {
+	background: #0b0b0b;
+	border-bottom: 1px solid #262626;
+}
+body.theme-dark .logo,
+body.theme-dark .site-header nav a {
+	color: #ece4d3;
+}
+body.theme-dark .call-btn {
+	background: #d4af37;
+	color: #0b0b0b;
+}
+.nav-luxury {
+	color: #d4af37 !important;
+	font-weight: 800 !important;
+}
+
+.luxury-hero {
+	text-align: center;
+	padding: 90px 32px 50px;
+	border-bottom: 1px solid #262626;
+}
+.luxury-eyebrow {
+	font-size: 12px;
+	letter-spacing: .18em;
+	color: #d4af37;
+	font-weight: 700;
+	margin-bottom: 14px;
+}
+.luxury-hero h1 {
+	font-size: clamp(40px, 7vw, 64px);
+	font-weight: 300;
+	letter-spacing: .04em;
+	margin: 0;
+	color: #f5f0e4;
+}
+.luxury-sub {
+	max-width: 520px;
+	margin: 18px auto 0;
+	color: #9c9484;
+	font-size: 15px;
+}
+.luxury-empty { text-align: center; color: #9c9484; }
+
+.luxury-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 30px;
+}
+.luxury-card {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+	background: #141414;
+	border: 1px solid #262626;
+	border-radius: 4px;
+	overflow: hidden;
+	transition: border-color .2s ease;
+}
+.luxury-card:hover { border-color: #d4af37; }
+.luxury-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.luxury-card-body { padding: 24px; }
+.luxury-card-body h2 { font-size: 19px; font-weight: 400; letter-spacing: .03em; margin: 0 0 6px; color: #f5f0e4; }
+.luxury-location { color: #9c9484; font-size: 13px; margin: 0 0 16px; }
+.luxury-price { font-size: 24px; color: #d4af37; font-weight: 300; letter-spacing: .04em; margin: 0 0 16px; }
+.luxury-stats { display: flex; gap: 16px; font-size: 12px; color: #9c9484; border-top: 1px solid #262626; padding-top: 14px; }
