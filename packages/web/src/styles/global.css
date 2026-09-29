@@ -292,11 +292,11 @@ body.theme-dark .site-header nav a {
 	color: #ece4d3;
 }
 body.theme-dark .call-btn {
-	background: #d4af37;
+	background: #f5f0e4;
 	color: #0b0b0b;
 }
 .nav-luxury {
-	color: #d4af37 !important;
+	color: #f5f0e4 !important;
 	font-weight: 800 !important;
 }
 
@@ -308,7 +308,7 @@ body.theme-dark .call-btn {
 .luxury-eyebrow {
 	font-size: 12px;
 	letter-spacing: .18em;
-	color: #d4af37;
+	color: #9c9484;
 	font-weight: 700;
 	margin-bottom: 14px;
 }
@@ -449,7 +449,7 @@ body.theme-dark .call-btn {
 	font-size: 18px;
 	cursor: pointer;
 }
-.lux-pagination button:hover { border-color: #d4af37; color: #d4af37; }
+.lux-pagination button:hover { border-color: #f5f0e4; color: #f5f0e4; }
 
 .lux-type-label {
 	color: #d8d2c2;
@@ -457,7 +457,7 @@ body.theme-dark .call-btn {
 	line-height: 1.4;
 	text-align: right;
 }
-.lux-type-label span { color: #d4af37; font-size: 20px; font-weight: 700; }
+.lux-type-label span { color: #f5f0e4; font-size: 20px; font-weight: 700; }
 
 .lux-thumbs { display: flex; }
 .lux-thumbs img {
@@ -474,7 +474,7 @@ body.theme-dark .call-btn {
 	text-align: center;
 	padding: 18px;
 	background: #141414;
-	color: #d4af37;
+	color: #f5f0e4;
 	text-decoration: none;
 	font-size: 14px;
 	font-weight: 700;
