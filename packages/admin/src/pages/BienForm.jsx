@@ -7,7 +7,7 @@ const emptyBien = {
   titre: '', type: 'Appartement', prix: '', ville: '', codePostal: '',
   surface: '', pieces: '', chambres: '',
   etatTexte: '', etatCouleur: '#43a047', etatAnim: 'none', livraison: '',
-  tauxPerso: '', boutonTexte: '', boutonUrl: '', luxe: false, description: '',
+  tauxPerso: '', boutonTexte: '', boutonUrl: '', luxe: false, description: '', videoUrl: '',
   dpeLettre: '', dpeValeur: '', gesLettre: '', gesValeur: '',
   chargesAnnuelles: '', numCopropriete: '', quotePart: '', syndicatActif: false,
   syndicProcedureInfo: '', taxeFonciere: '', chargeType: 'copropriete',
@@ -38,6 +38,7 @@ export default function BienForm() {
           etatTexte: data.etatTexte || '', etatCouleur: data.etatCouleur || '#43a047',
           etatAnim: data.etatAnim || 'none', livraison: data.livraison || '',
           tauxPerso: data.tauxPerso ?? '', boutonTexte: data.boutonTexte || '', boutonUrl: data.boutonUrl || '',
+          videoUrl: data.videoUrl || '',
           luxe: !!data.luxe, description: data.description || '',
           dpeLettre: data.dpeLettre || '', dpeValeur: data.dpeValeur ?? '',
           gesLettre: data.gesLettre || '', gesValeur: data.gesValeur ?? '',
@@ -92,6 +93,9 @@ export default function BienForm() {
       pieces: bien.pieces !== '' ? Number(bien.pieces) : null,
       chambres: bien.chambres !== '' ? Number(bien.chambres) : null,
       tauxPerso: bien.tauxPerso !== '' ? Number(bien.tauxPerso) : null,
+      boutonTexte: bien.boutonTexte || null,
+      boutonUrl: bien.boutonUrl || null,
+      videoUrl: bien.videoUrl || null,
       luxe: !!bien.luxe,
       description: bien.description || null,
       dpeLettre: bien.dpeLettre || null,
@@ -290,6 +294,20 @@ export default function BienForm() {
             </div>
           ))}
           <button type="button" onClick={addEquipRow}>+ Ajouter un équipement</button>
+        </div>
+
+        <div className="card">
+          <h2>Vidéo de visite (optionnel)</h2>
+          <p className="muted" style={{ marginTop: -8 }}>
+            Colle l'URL YouTube, Vimeo ou le lien direct d'un MP4. Une icône vidéo apparaîtra sur la fiche pour la lire.
+          </p>
+          <input
+            type="url"
+            placeholder="https://www.youtube.com/watch?v=..."
+            value={bien.videoUrl}
+            onChange={(e) => updateField('videoUrl', e.target.value)}
+            style={{ width: '100%', maxWidth: 420, padding: 10, border: '1px solid #e2e2e2', borderRadius: 8 }}
+          />
         </div>
 
         <div className="card">

@@ -35,6 +35,8 @@ const ICONS = {
 	shield: icon('<path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3Z"/><path d="m9.2 12 2 2 3.6-4"/>'),
 	image: icon('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-4.5-4.5L9 19"/>'),
 	plan: icon('<path d="M3 5.5 9 3.5l6 2 6-2V18.5l-6 2-6-2-6 2V5.5Z"/><path d="M9 3.5v17M15 5.5v17"/>'),
+	map: icon('<path d="m9 3-6 2v16l6-2 6 2 6-2V3l-6 2-6-2Z"/><path d="M9 3v16m6-14v16"/>'),
+	video: icon('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3v-4Z"/>'),
 	star: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.5 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.3l6.5-.9L12 2.5Z"/></svg>`,
 	pool: icon('<path d="M2 15c2 0 2 1.5 4 1.5S8 15 10 15s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M2 19c2 0 2 1.5 4 1.5S8 19 10 19s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/><path d="M6 12V6a2 2 0 0 1 4 0m4 6V6a2 2 0 0 1 4 0M6 8h8"/>'),
 	umbrella: icon('<path d="M12 2a9 9 0 0 0-9 9h18a9 9 0 0 0-9-9Z"/><path d="M12 11v7a2 2 0 0 0 4 0"/><path d="M12 2v2"/>'),
@@ -70,6 +72,25 @@ const DPE_COLORS = { A: '#319834', B: '#33b31a', C: '#ffd500', D: '#f39200', E: 
 const DPE_RANGES = { A: '≤ 70', B: '71 à 110', C: '111 à 180', D: '181 à 250', E: '251 à 330', F: '331 à 420', G: '> 420' };
 const dpeColor = (l) => DPE_COLORS[l] || '#999';
 const dpeRange = (l) => DPE_RANGES[l] || '';
+
+// --- Vidéo : normalize YouTube / Vimeo / MP4 en URL intégrable ---
+function parseVideoUrl(raw) {
+	if (!raw) return null;
+	const url = raw.trim();
+	let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/i);
+	if (m) return { kind: 'embed', src: `https://www.youtube.com/embed/${m[1]}?rel=0` };
+	m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+	if (m) return { kind: 'embed', src: `https://player.vimeo.com/video/${m[1]}` };
+	if (/\.(mp4|webm)(\?.*)?$/i.test(url)) return { kind: 'file', src: url };
+	return { kind: 'embed', src: url };
+}
+const video = parseVideoUrl(bien.videoUrl);
+
+// --- Carte : lien Google Maps depuis ville + code postal ---
+const mapQuery = encodeURIComponent([bien.ville, bien.codePostal, 'France'].filter(Boolean).join(', '));
+const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : null;
+const hasMapView = !!mapEmbedSrc;
+const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (video ? 1 : 0);
 ---
 <Layout title={bien.titre} description={`Vente ${bien.type ? bien.type.toLowerCase() : 'de bien'} à ${bien.ville || ''} - ${Number(bien.prix).toLocaleString('fr-FR')} €`}>
 	<div class="dl-page">
@@ -97,17 +118,41 @@ const dpeRange = (l) => DPE_RANGES[l] || '';
 					</div>
 				)}
 
+				{hasMapView && (
+					<div class="dl-view" id="view-map" hidden>
+						<iframe
+							src={mapEmbedSrc}
+							title={`Localisation - ${bien.titre}`}
+							loading="lazy"
+							referrerpolicy="no-referrer-when-downgrade"
+							allowfullscreen
+						></iframe>
+					</div>
+				)}
+
+				{video && (
+					<div class="dl-view" id="view-video" hidden>
+						{video.kind === 'file' ? (
+							<video src={video.src} controls playsinline preload="metadata"></video>
+						) : (
+							<iframe src={video.src} title={`Vidéo - ${bien.titre}`} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+						)}
+					</div>
+				)}
+
+				{viewsCount > 1 && (
+					<div class="dl-viewtoggle" role="group" aria-label="Changer de vue">
+						<button type="button" class="is-active" data-view="photos" aria-label="Voir les photos" set:html={ICONS.image} />
+						{plans.length > 0 && <button type="button" data-view="plans" aria-label="Voir les plans" set:html={ICONS.plan} />}
+						{hasMapView && <button type="button" data-view="map" aria-label="Voir la carte" set:html={ICONS.map} />}
+						{video && <button type="button" data-view="video" aria-label="Voir la vidéo" set:html={ICONS.video} />}
+					</div>
+				)}
+
 				{badgeTexte && (
 					<div class="dl-badge">
 						<span class:list={["dl-badge-dot", badgeAnim]} style={`--c:${badgeCouleur}`}></span>
 						<span>{badgeTexte}</span>
-					</div>
-				)}
-
-				{(plans.length > 0) && (
-					<div class="dl-viewtoggle" role="group" aria-label="Changer de vue">
-						<button type="button" class="is-active" data-view="photos" aria-label="Voir les photos" set:html={photos.length > 0 ? ICONS.image : ICONS.plan} />
-						{plans.length > 0 && <button type="button" data-view="plans" aria-label="Voir les plans" set:html={ICONS.plan} />}
 					</div>
 				)}
 
@@ -288,15 +333,27 @@ const dpeRange = (l) => DPE_RANGES[l] || '';
 	</div>
 
 	<script define:vars={{ API_URL, bienId: bien.id }}>
-		// --- Vue photos / plans ---
+		// --- Vue photos / plans / carte / vidéo ---
 		const toggle = document.querySelector('.dl-viewtoggle');
 		if (toggle) {
 			toggle.querySelectorAll('button').forEach((btn) => {
 				btn.addEventListener('click', () => {
 					toggle.querySelectorAll('button').forEach((b) => b.classList.toggle('is-active', b === btn));
-					document.getElementById('view-photos').hidden = btn.dataset.view !== 'photos';
-					const plansView = document.getElementById('view-plans');
-					if (plansView) plansView.hidden = btn.dataset.view !== 'plans';
+					const view = btn.dataset.view;
+					['photos', 'plans', 'map', 'video'].forEach((v) => {
+						const el = document.getElementById('view-' + v);
+						if (el) el.hidden = v !== view;
+					});
+					// stoppe la vidéo quand on quitte sa vue
+					if (view !== 'video') {
+						const vid = document.querySelector('#view-video video');
+						if (vid) vid.pause();
+						const vidFrame = document.querySelector('#view-video iframe');
+						if (vidFrame) {
+							const src = vidFrame.src;
+							vidFrame.src = src; // recharge = stoppe la lecture
+						}
+					}
 				});
 			});
 		}

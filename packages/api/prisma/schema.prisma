@@ -62,6 +62,9 @@ model Bien {
   boutonTexte String?
   boutonUrl   String?
 
+  // Visite video (YouTube, Vimeo ou MP4 direct) affichée dans le détail
+  videoUrl    String?
+
   photos    Photo[]
   plans     PlanPdf[]
   equipements Equipement[]

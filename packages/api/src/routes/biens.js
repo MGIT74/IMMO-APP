@@ -145,7 +145,7 @@ function pickBienFields(body) {
   const allowed = [
     'titre', 'type', 'prix', 'ville', 'codePostal', 'surface', 'pieces', 'chambres',
     'etatTexte', 'etatCouleur', 'etatAnim', 'livraison', 'vendu', 'publie', 'luxe', 'description',
-    'tauxPerso', 'boutonTexte', 'boutonUrl',
+    'tauxPerso', 'boutonTexte', 'boutonUrl', 'videoUrl',
     'dpeLettre', 'dpeValeur', 'gesLettre', 'gesValeur', 'dpeDate',
     'chargesAnnuelles', 'numCopropriete', 'quotePart', 'syndicatActif', 'syndicProcedureInfo',
     'taxeFonciere', 'chargeType', 'honorairesInclus',
