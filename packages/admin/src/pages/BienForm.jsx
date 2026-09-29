@@ -141,6 +141,7 @@ export default function BienForm() {
               <option>Terrain</option>
               <option>Local commercial</option>
               <option>Parking</option>
+              <option>Luxury</option>
             </select>
             <input type="number" placeholder="Prix (€)" value={bien.prix} onChange={(e) => updateField('prix', e.target.value)} required />
             <input placeholder="Ville" value={bien.ville} onChange={(e) => updateField('ville', e.target.value)} />
