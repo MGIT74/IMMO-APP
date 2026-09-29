@@ -62,8 +62,21 @@ export default function Biens() {
               {biens.map((bien) => (
                 <tr key={bien.id}>
                   <td>
-                    <Link to={`/biens/${bien.id}/edit`}><strong>{bien.titre}</strong></Link>
-                    <div className="muted">{bien.ville}{bien.type ? ` · ${bien.type}` : ''}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {bien.photos?.[0] ? (
+                        <img
+                          src={bien.photos[0].url.startsWith('http') ? bien.photos[0].url : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${bien.photos[0].url}`}
+                          alt=""
+                          style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e2e2' }}
+                        />
+                      ) : (
+                        <div style={{ width: 44, height: 44, borderRadius: 8, background: '#f0f0ee', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#bbb' }}>🏠</div>
+                      )}
+                      <div>
+                        <Link to={`/biens/${bien.id}/edit`}><strong>{bien.titre}</strong></Link>
+                        <div className="muted">{bien.ville}{bien.type ? ` · ${bien.type}` : ''}</div>
+                      </div>
+                    </div>
                   </td>
                   <td>{Number(bien.prix).toLocaleString('fr-FR')} €</td>
                   <td>
