@@ -36,6 +36,10 @@ body {
 	.biens-grid { grid-template-columns: 1fr; }
 	.container { padding: 20px 18px; }
 }
+/* Tablette : 2 colonnes (portrait), 3 colonnes (paysage via grille auto) */
+@media (min-width: 601px) and (max-width: 900px) and (orientation: portrait) {
+	.biens-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+}
 
 /* --- Carte bien --- */
 .immo-card {
@@ -545,27 +549,85 @@ body {
 .dl-others-link:hover { text-decoration: underline; }
 .dl-others-grid { grid-template-columns: repeat(3, 1fr) !important; }
 
+/* ==================== Fiche détail : responsive tablette / mobile ==================== */
+
+/* --- Desktop étroit (1081-1200px) : fiche 2 colonnes compactes --- */
+@media (min-width: 1081px) and (max-width: 1200px) {
+	.dl-card { gap: 22px; padding: 22px; margin-top: 22px; }
+	.dl-media { min-height: 540px; height: calc(100vh - 170px); max-height: 700px; }
+	.dl-info { padding: 6px 4px 12px; }
+	.dl-title { font-size: clamp(26px, 3.2vw, 34px); }
+	.dl-others-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* --- Tablette verticale / mobile (≤ 1080px) : colonnes empilées, sticky supprimée --- */
 @media (max-width: 1080px) {
 	.dl-card { grid-template-columns: 1fr; padding: 0; gap: 0; margin: 0; border-radius: 0; box-shadow: none; }
-	.dl-media { grid-column: 1; grid-row: 1; border-radius: 0; min-height: 52vh; position: static; height: auto; max-height: none; }
+	.dl-media { grid-column: 1; grid-row: 1; border-radius: 0; position: static; height: auto; max-height: none; }
 	.dl-info { grid-column: 1; grid-row: 2; padding: 26px 20px 10px; }
-	.dl-amenities { grid-template-columns: 1fr; }
+	.dl-amenities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.dl-price-box { left: 20px; bottom: 18px; }
 	.dl-dots { right: 20px; bottom: 18px; }
 	.dl-badge { top: 16px; left: 16px; }
 	.dl-viewtoggle { top: 16px; }
 	.dl-others { padding: 10px 20px 46px; }
-	.dl-others-grid { grid-template-columns: 1fr !important; }
 	.dl-contact { flex-wrap: wrap; }
 	.dl-contact-btn { margin-left: auto; }
 }
 
+/* --- Tablette verticale (portrait 701-1080px) : photo haute, 2 biens par ligne --- */
+@media (min-width: 701px) and (max-width: 1080px) and (orientation: portrait) {
+	.dl-media { min-height: 62vh; }
+	.dl-title { font-size: clamp(30px, 5.4vw, 40px); }
+	.dl-stats b { font-size: clamp(28px, 4.4vw, 34px); }
+	.dl-info { padding: 28px 30px 14px; max-width: 640px; }
+	.dl-others { padding: 16px 30px 46px; }
+	.dl-others-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* --- Tablette horizontale / mobile paysage (600-1080px landscape) : 2 vraies colonnes, photo pleine hauteur sticky --- */
+@media (min-width: 600px) and (max-width: 1080px) and (orientation: landscape) {
+	.dl-card { grid-template-columns: 1fr 1fr; padding: 0; gap: 0; margin: 0; border-radius: 0; box-shadow: none; }
+	.dl-media { grid-column: 1; grid-row: 1; position: sticky; top: 0; height: 100vh; height: 100dvh; min-height: 0; border-radius: 0; }
+	.dl-info { grid-column: 2; grid-row: 1; padding: 22px 26px 24px; }
+	.dl-title { font-size: clamp(26px, 3.6vw, 36px); margin-top: 14px; }
+	.dl-cta { padding: 12px 18px; font-size: 13px; }
+	.dl-round { width: 38px; height: 38px; }
+	.dl-stats { gap: 22px; }
+	.dl-stat b { font-size: 24px; }
+	.dl-others { padding: 16px 26px 40px; }
+	.dl-others-grid { grid-template-columns: repeat(2, 1fr) !important; }
+	.dl-contact { gap: 10px; padding: 14px; }
+	.dl-contact > img { width: 48px; height: 48px; }
+}
+
+/* --- Mobile portrait (≤ 700px) --- */
+@media (max-width: 700px) {
+	.dl-media { min-height: 62vh; }
+	.dl-info { padding: 24px 18px 10px; }
+	.dl-top-row { flex-wrap: wrap; gap: 10px; }
+	.dl-cta { margin-left: 0; width: 100%; justify-content: center; padding: 15px 18px; font-size: 14px; min-height: 48px; }
+	.dl-round { width: 46px; height: 46px; }
+	.dl-stats { gap: 26px; margin: 18px 0 4px; }
+	.dl-diag { gap: 18px; }
+	.dl-diag-lettre { width: 54px; height: 54px; font-size: 26px; padding-bottom: 8px; }
+	.dl-legals { padding: 2px 16px; }
+	.dl-legal-row { flex-direction: column; align-items: flex-start; gap: 3px; }
+	.dl-legal-value { text-align: left; }
+	.dl-amenities { grid-template-columns: 1fr; gap: 10px; }
+	.dl-others-grid { grid-template-columns: 1fr !important; }
+}
+
+/* --- Petit mobile (≤ 480px) --- */
 @media (max-width: 480px) {
-	.dl-card { grid-template-rows: 48vh auto; }
 	.dl-media { min-height: 48vh; }
 	.dl-title { font-size: 27px; }
-	.dl-cta { padding: 13px 18px; font-size: 13px; }
 	.dl-stats { gap: 22px; }
+	.dl-stats b { font-size: 24px; }
+	.dl-price-value { font-size: 30px; }
+	.dl-amenity { font-size: 13.5px; }
+	.dl-others-head h2 { font-size: 22px; }
+	.dl-viewtoggle button { width: 40px; height: 32px; }
 }
 
 /* --- Header --- */
@@ -645,6 +707,13 @@ body.nav-open { overflow: hidden; }
 	align-items: flex-end;
 	padding: 60px 32px;
 }
+/* Mobile portrait / tablette portrait : hero plus haut, texte lisible */
+@media (max-width: 1080px) and (orientation: portrait) {
+	.hero { min-height: 78vh; padding: 44px 24px; align-items: flex-end; }
+}
+@media (min-width: 1081px) {
+	.hero { min-height: 70vh; }
+}
 .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,.1)); }
 .hero-content { position: relative; z-index: 2; color: #fff; max-width: 600px; }
 .hero-content h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; margin: 0; }
@@ -670,7 +739,14 @@ body.nav-open { overflow: hidden; }
 .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: #999; text-align: center; }
 @media (max-width: 600px) {
 	.section { padding: 44px 20px; }
-	.hero { padding: 40px 20px; min-height: 60vh; }
+}
+/* Tablette portrait : sections un peu resserrées */
+@media (min-width: 601px) and (max-width: 900px) and (orientation: portrait) {
+	.section { padding: 48px 28px; }
+	.about { grid-template-columns: 220px 1fr; gap: 30px; }
+	.steps-grid { grid-template-columns: repeat(2, 1fr); }
+	.achat-grid { grid-template-columns: repeat(2, 1fr); }
+	.footer-inner { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* --- À propos --- */
@@ -928,6 +1004,18 @@ body.theme-dark .call-btn {
 	.lux-stats-row { gap: 24px; }
 	.lux-footer-row { align-items: flex-start; }
 	.lux-type-label { text-align: left; }
+}
+
+/* Tablette portrait : titre moins géant mais toujours imposant */
+@media (min-width: 601px) and (max-width: 1080px) and (orientation: portrait) {
+	.lux-hero { min-height: 72vh; padding: 48px 36px; }
+	.lux-title { font-size: clamp(44px, 9.5vw, 84px); }
+	.lux-stats-panel { padding: 36px; }
+}
+
+/* Mobile / tablette étroits paysage : le hero luxury reste plein écran */
+@media (max-width: 1080px) and (orientation: landscape) {
+	.lux-title { font-size: clamp(34px, 9vh, 72px); }
 }
 
 @media (max-width: 600px) {
