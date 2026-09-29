@@ -24,6 +24,10 @@ body {
 	flex-direction: column;
 	gap: 4px;
 	flex-shrink: 0;
+	position: sticky;
+	top: 0;
+	height: 100vh;
+	overflow-y: auto;
 }
 
 .sidebar-title { font-weight: 800; font-size: 18px; margin-bottom: 20px; }
@@ -41,6 +45,7 @@ body {
 .logout-btn {
 	margin-top: auto;
 	background: none;
+	color: var(--dark);
 	border: 1px solid var(--border);
 	border-radius: 8px;
 	padding: 10px;
