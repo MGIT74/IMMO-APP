@@ -73,16 +73,36 @@ const DPE_RANGES = { A: '≤ 70', B: '71 à 110', C: '111 à 180', D: '181 à 25
 const dpeColor = (l) => DPE_COLORS[l] || '#999';
 const dpeRange = (l) => DPE_RANGES[l] || '';
 
-// --- Vidéo : normalize YouTube / Vimeo / MP4 en URL intégrable ---
+// --- Vidéo : accepte URL YouTube/Vimeo/Dailymotion, code <iframe> collé, ou MP4 direct ---
 function parseVideoUrl(raw) {
 	if (!raw) return null;
-	const url = raw.trim();
+	let url = raw.trim();
+
+	// Code d'intégration complet : on extrait l'attribut src
+	if (url.startsWith('<')) {
+		const m = url.match(/src=["']([^"']+)["']/i);
+		if (!m) return null;
+		url = m[1].trim();
+	}
+
+	// MP4 / WebM direct -> balise <video>
+	if (/\.(mp4|webm)(\?.*)?$/i.test(url)) return { kind: 'file', src: url };
+
+	// YouTube en forme "watch" / "shorts" / "youtu.be" -> forme embed
 	let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/i);
 	if (m) return { kind: 'embed', src: `https://www.youtube.com/embed/${m[1]}?rel=0` };
+
+	// Vimeo sans /video/
 	m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
 	if (m) return { kind: 'embed', src: `https://player.vimeo.com/video/${m[1]}` };
-	if (/\.(mp4|webm)(\?.*)?$/i.test(url)) return { kind: 'file', src: url };
-	return { kind: 'embed', src: url };
+
+	// Dailymotion
+	m = url.match(/(?:dailymotion\.com\/video|dai\.ly\/)([a-z0-9]+)/i);
+	if (m) return { kind: 'embed', src: `https://www.dailymotion.com/embed/video/${m[1]}` };
+
+	// Sinon : on part du principe que c'est déjà une URL d'intégration valide
+	if (/^https?:\/\//i.test(url)) return { kind: 'embed', src: url };
+	return null;
 }
 const video = parseVideoUrl(bien.videoUrl);
 

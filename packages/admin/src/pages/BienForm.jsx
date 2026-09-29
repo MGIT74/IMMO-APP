@@ -299,11 +299,11 @@ export default function BienForm() {
         <div className="card">
           <h2>Vidéo de visite (optionnel)</h2>
           <p className="muted" style={{ marginTop: -8 }}>
-            Colle l'URL YouTube, Vimeo ou le lien direct d'un MP4. Une icône vidéo apparaîtra sur la fiche pour la lire.
+            Colle un lien YouTube, Vimeo, Dailymotion, MP4 — ou directement le code d'intégration <code>&lt;iframe ...&gt;</code> complet.
           </p>
           <input
-            type="url"
-            placeholder="https://www.youtube.com/watch?v=..."
+            type="text"
+            placeholder="https://www.youtube.com/watch?v=... ou <iframe src=...>"
             value={bien.videoUrl}
             onChange={(e) => updateField('videoUrl', e.target.value)}
             style={{ width: '100%', maxWidth: 420, padding: 10, border: '1px solid #e2e2e2', borderRadius: 8 }}
