@@ -39,7 +39,11 @@ body {
 	text-decoration: none;
 	font-weight: 600;
 	font-size: 14px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
 }
+.sidebar a svg { width: 18px; height: 18px; flex-shrink: 0; }
 .sidebar a.active { background: var(--dark); color: #fff; }
 
 .logout-btn {
@@ -50,7 +54,13 @@ body {
 	border-radius: 8px;
 	padding: 10px;
 	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+	font-weight: 600;
 }
+.logout-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
 .content { flex: 1; padding: 32px; min-width: 0; }
 
@@ -189,20 +199,26 @@ button.danger { background: #e53935; }
 	}
 	.sidebar-title { display: none; }
 	.sidebar a {
+		flex-direction: column;
+		gap: 3px;
 		white-space: nowrap;
-		padding: 8px 10px;
-		font-size: 12px;
+		padding: 6px 8px;
+		font-size: 10px;
 		flex: 1;
 		text-align: center;
 	}
+	.sidebar a svg { width: 20px; height: 20px; }
 	.logout-btn {
+		flex-direction: column;
+		gap: 3px;
 		margin-top: 0;
 		margin-left: 0;
 		white-space: nowrap;
 		flex-shrink: 0;
-		padding: 8px 10px;
-		font-size: 11px;
+		padding: 6px 8px;
+		font-size: 10px;
 	}
+	.logout-btn svg { width: 20px; height: 20px; }
 }
 
 @media (max-width: 480px) {
