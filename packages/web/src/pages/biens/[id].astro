@@ -1,6 +1,7 @@
 ---
 import Layout from '../../components/Layout.astro';
-import { getBien, API_URL } from '../../lib/api.js';
+import PropertyCard from '../../components/PropertyCard.astro';
+import { getBien, getBiens, API_URL } from '../../lib/api.js';
 
 const { id } = Astro.params;
 const bien = await getBien(id);
@@ -8,6 +9,8 @@ const bien = await getBien(id);
 if (!bien) {
 	return Astro.redirect('/');
 }
+
+const autresBiens = (await getBiens()).filter((b) => b.id !== bien.id && !b.luxe).slice(0, 3);
 
 const badgeTexte = bien.vendu ? 'Vendu' : bien.etatTexte;
 const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
@@ -61,9 +64,15 @@ const amenityIcon = (k) => AMENITY_ICONS[k] || AMENITY_ICONS.generic;
 const AMENITIES_VISIBLE = 6;
 const equipements = bien.equipements || [];
 const moreAmenities = Math.max(equipements.length - AMENITIES_VISIBLE, 0);
+
+// --- Couleurs et plages DPE / GES (échelle réglementaire française) ---
+const DPE_COLORS = { A: '#319834', B: '#33b31a', C: '#ffd500', D: '#f39200', E: '#e2001a', F: '#cf0d1f', G: '#93212f' };
+const DPE_RANGES = { A: '≤ 70', B: '71 à 110', C: '111 à 180', D: '181 à 250', E: '251 à 330', F: '331 à 420', G: '> 420' };
+const dpeColor = (l) => DPE_COLORS[l] || '#999';
+const dpeRange = (l) => DPE_RANGES[l] || '';
 ---
-<Layout title={bien.titre} chrome="bare">
-	<div class="dl-shell">
+<Layout title={bien.titre} description={`Vente ${bien.type ? bien.type.toLowerCase() : 'de bien'} à ${bien.ville || ''} - ${Number(bien.prix).toLocaleString('fr-FR')} €`}>
+	<div class="dl-page">
 		<div class="dl-card">
 			<!-- Panneau média -->
 			<section class="dl-media">
@@ -157,20 +166,83 @@ const moreAmenities = Math.max(equipements.length - AMENITIES_VISIBLE, 0);
 					</div>
 				)}
 
-				{plans.length > 0 && (
-					<div class="dl-section">
-						<h3 class="dl-h3">Plans</h3>
-						<div class="dl-plans">
-							{plans.map((plan) => (
-								<div class="dl-plan-card">
-									<div class="dl-plan-label">{plan.label}</div>
-									<iframe src={`${plan.url}#toolbar=0&view=FitH&navpanes=0`} title={plan.label} loading="lazy"></iframe>
-									<a href={plan.url} target="_blank" rel="noopener noreferrer" class="dl-plan-open">Ouvrir le PDF ↗</a>
-								</div>
-							))}
-						</div>
+			{plans.length > 0 && (
+				<div class="dl-section">
+					<h3 class="dl-h3">Plans</h3>
+					<div class="dl-plans">
+						{plans.map((plan) => (
+							<div class="dl-plan-card">
+								<div class="dl-plan-label">{plan.label}</div>
+								<iframe src={`${plan.url}#toolbar=0&view=FitH&navpanes=0`} title={plan.label} loading="lazy"></iframe>
+								<a href={plan.url} target="_blank" rel="noopener noreferrer" class="dl-plan-open">Ouvrir le PDF ↗</a>
+							</div>
+						))}
 					</div>
-				)}
+				</div>
+			)}
+
+			{(bien.dpeLettre || bien.gesLettre) && (
+				<div class="dl-section">
+					<h3 class="dl-h3">Diagnostic de performance énergétique</h3>
+					<div class="dl-diag">
+						{bien.dpeLettre && (
+							<div class="dl-diag-item">
+								<div class="dl-diag-lettre" style={`--dpe:${dpeColor(bien.dpeLettre)}`}>
+									<span>{bien.dpeLettre}</span>
+								</div>
+								<div class="dl-diag-info">
+									<div class="dl-diag-title">DPE <span>({dpeRange(bien.dpeLettre)})</span></div>
+									{bien.dpeValeur != null && <div class="dl-diag-value">{new Intl.NumberFormat('fr-FR').format(bien.dpeValeur)} kWh/m²/an</div>}
+								</div>
+							</div>
+						)}
+						{bien.gesLettre && (
+							<div class="dl-diag-item">
+								<div class="dl-diag-lettre" style={`--dpe:${dpeColor(bien.gesLettre)}`}>
+									<span>{bien.gesLettre}</span>
+								</div>
+								<div class="dl-diag-info">
+									<div class="dl-diag-title">GES <span>(émissions CO₂)</span></div>
+									{bien.gesValeur != null && <div class="dl-diag-value">{new Intl.NumberFormat('fr-FR').format(bien.gesValeur)} kg CO₂/m²/an</div>}
+								</div>
+							</div>
+						)}
+					</div>
+					{!bien.gesLettre && bien.dpeLettre && <p class="dl-diag-note">Les émissions CO₂ ne sont pas renseignées pour ce bien.</p>}
+				</div>
+			)}
+
+			{(bien.chargesAnnuelles || bien.taxeFonciere || bien.numCopropriete) && (
+				<div class="dl-section">
+					<h3 class="dl-h3">Informations financières</h3>
+					<div class="dl-legals">
+						{bien.chargeType !== 'individuel' && bien.numCopropriete && (
+							<div class="dl-legal-row">
+								<div class="dl-legal-label">Copropriété</div>
+								<div class="dl-legal-value">{bien.numCopropriete} lots{bien.quotePart != null ? ` · quote-part ${new Intl.NumberFormat('fr-FR').format(bien.quotePart)} %` : ''}</div>
+							</div>
+						)}
+						{bien.chargeType !== 'individuel' && bien.chargesAnnuelles != null && (
+							<div class="dl-legal-row">
+								<div class="dl-legal-label">Charges annuelles</div>
+								<div class="dl-legal-value">{new Intl.NumberFormat('fr-FR').format(bien.chargesAnnuelles)} € / an <span class="dl-legal-note">(moyenne sur 2 ans, art. 12 loi ALUR)</span></div>
+							</div>
+						)}
+						{bien.taxeFonciere != null && (
+							<div class="dl-legal-row">
+								<div class="dl-legal-label">Taxe foncière</div>
+								<div class="dl-legal-value">{new Intl.NumberFormat('fr-FR').format(bien.taxeFonciere)} € / an</div>
+							</div>
+						)}
+						{bien.syndicatActif && (
+							<div class="dl-legal-row">
+								<div class="dl-legal-label">Procédure en cours</div>
+								<div class="dl-legal-value">{bien.syndicProcedureInfo || 'Procédure contre le syndicat de copropriété'}</div>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
 
 				<div class="dl-contact">
 					<img src="https://ambassadeur-immo.com/wp-content/uploads/2026/05/ERIC-PROFIL.jpeg" alt="Eric, Ambassadeur Bkeys" />
@@ -201,6 +273,18 @@ const moreAmenities = Math.max(equipements.length - AMENITIES_VISIBLE, 0);
 				</form>
 			</section>
 		</div>
+
+		{autresBiens.length > 0 && (
+			<section class="dl-others">
+				<div class="dl-others-head">
+					<h2>Autres biens <em>à vendre</em></h2>
+					<a href="/" class="dl-others-link">Voir tous les biens ↗</a>
+				</div>
+				<div class="biens-grid dl-others-grid">
+					{autresBiens.map((b) => <PropertyCard bien={b} />)}
+				</div>
+			</section>
+		)}
 	</div>
 
 	<script define:vars={{ API_URL, bienId: bien.id }}>

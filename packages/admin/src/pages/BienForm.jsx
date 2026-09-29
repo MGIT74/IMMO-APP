@@ -8,6 +8,9 @@ const emptyBien = {
   surface: '', pieces: '', chambres: '',
   etatTexte: '', etatCouleur: '#43a047', etatAnim: 'none', livraison: '',
   tauxPerso: '', boutonTexte: '', boutonUrl: '', luxe: false, description: '',
+  dpeLettre: '', dpeValeur: '', gesLettre: '', gesValeur: '',
+  chargesAnnuelles: '', numCopropriete: '', quotePart: '', syndicatActif: false,
+  syndicProcedureInfo: '', taxeFonciere: '', chargeType: 'copropriete',
 };
 
 export default function BienForm() {
@@ -36,6 +39,12 @@ export default function BienForm() {
           etatAnim: data.etatAnim || 'none', livraison: data.livraison || '',
           tauxPerso: data.tauxPerso ?? '', boutonTexte: data.boutonTexte || '', boutonUrl: data.boutonUrl || '',
           luxe: !!data.luxe, description: data.description || '',
+          dpeLettre: data.dpeLettre || '', dpeValeur: data.dpeValeur ?? '',
+          gesLettre: data.gesLettre || '', gesValeur: data.gesValeur ?? '',
+          chargesAnnuelles: data.chargesAnnuelles ?? '', numCopropriete: data.numCopropriete ?? '',
+          quotePart: data.quotePart ?? '', syndicatActif: !!data.syndicatActif,
+          syndicProcedureInfo: data.syndicProcedureInfo || '', taxeFonciere: data.taxeFonciere ?? '',
+          chargeType: data.chargeType || 'copropriete',
         });
         setEquipements(
           data.equipements?.length
@@ -85,6 +94,17 @@ export default function BienForm() {
       tauxPerso: bien.tauxPerso !== '' ? Number(bien.tauxPerso) : null,
       luxe: !!bien.luxe,
       description: bien.description || null,
+      dpeLettre: bien.dpeLettre || null,
+      dpeValeur: bien.dpeValeur !== '' ? Number(bien.dpeValeur) : null,
+      gesLettre: bien.gesLettre || null,
+      gesValeur: bien.gesValeur !== '' ? Number(bien.gesValeur) : null,
+      chargesAnnuelles: bien.chargesAnnuelles !== '' ? Number(bien.chargesAnnuelles) : null,
+      numCopropriete: bien.numCopropriete !== '' ? Number(bien.numCopropriete) : null,
+      quotePart: bien.quotePart !== '' ? Number(bien.quotePart) : null,
+      syndicatActif: !!bien.syndicatActif,
+      syndicProcedureInfo: bien.syndicProcedureInfo || null,
+      taxeFonciere: bien.taxeFonciere !== '' ? Number(bien.taxeFonciere) : null,
+      chargeType: bien.chargeType || null,
       equipements: equipements
         .filter((eq) => eq.texte.trim() !== '')
         .map((eq) => ({ icone: eq.icone, texte: eq.texte })),
@@ -196,6 +216,56 @@ export default function BienForm() {
             </select>
             <input placeholder="Texte de livraison (ex : Livraison T3 2026)" value={bien.livraison} onChange={(e) => updateField('livraison', e.target.value)} />
           </div>
+        </div>
+
+        <div className="card">
+          <h2>Énergie & diagnostics (DPE / GES)</h2>
+          <p className="muted" style={{ marginTop: -8 }}>
+            Mention obligatoire pour toute annonce en France (arrêté du 31 mars 2021). Fais remplir le diagnostic par le diagnostiqueur.
+          </p>
+          <div className="form-grid">
+            <select value={bien.dpeLettre} onChange={(e) => updateField('dpeLettre', e.target.value)}>
+              <option value="">— DPE (lettre) —</option>
+              {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((l) => <option key={l}>{l}</option>)}
+            </select>
+            <input type="number" placeholder="DPE valeur (kWh/m²/an)" value={bien.dpeValeur} onChange={(e) => updateField('dpeValeur', e.target.value)} />
+            <select value={bien.gesLettre} onChange={(e) => updateField('gesLettre', e.target.value)}>
+              <option value="">— GES (lettre) —</option>
+              {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((l) => <option key={l}>{l}</option>)}
+            </select>
+            <input type="number" placeholder="GES valeur (kg CO₂/m²/an)" value={bien.gesValeur} onChange={(e) => updateField('gesValeur', e.target.value)} />
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Charges & copropriété</h2>
+          <div className="form-grid">
+            <select value={bien.chargeType} onChange={(e) => updateField('chargeType', e.target.value)}>
+              <option value="copropriete">En copropriété</option>
+              <option value="individuel">Bien individuel (maison)</option>
+            </select>
+            <input type="number" step="0.01" placeholder="Charges annuelles (€)" value={bien.chargesAnnuelles} onChange={(e) => updateField('chargesAnnuelles', e.target.value)} />
+            {bien.chargeType !== 'individuel' && (
+              <>
+                <input type="number" placeholder="Nombre de lots (copropriété)" value={bien.numCopropriete} onChange={(e) => updateField('numCopropriete', e.target.value)} />
+                <input type="number" step="0.01" placeholder="Quote-part (%)" value={bien.quotePart} onChange={(e) => updateField('quotePart', e.target.value)} />
+              </>
+            )}
+            <input type="number" step="0.01" placeholder="Taxe foncière annuelle (€)" value={bien.taxeFonciere} onChange={(e) => updateField('taxeFonciere', e.target.value)} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+            <input type="checkbox" checked={bien.syndicatActif} onChange={(e) => updateField('syndicatActif', e.target.checked)} style={{ width: 'auto' }} />
+            ⚖️ Procédure en cours contre le syndicat de copropriété (art. 13 loi ALUR — mention obligatoire)
+          </label>
+          {bien.syndicatActif && (
+            <input
+              type="text"
+              placeholder="Détail de la procédure (ex : contentieux sur travaux)"
+              value={bien.syndicProcedureInfo}
+              onChange={(e) => updateField('syndicProcedureInfo', e.target.value)}
+              style={{ width: '100%', marginTop: 10, padding: 10, border: '1px solid #e2e2e2', borderRadius: 8 }}
+            />
+          )}
         </div>
 
         <div className="card">
