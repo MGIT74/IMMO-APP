@@ -38,6 +38,23 @@ model Bien {
   luxe      Boolean  @default(false) // affiché dans la section "Luxury" (design noir)
   description String? @db.Text // texte éditorial affiché sur la page Luxury
 
+  // --- Diagnostics obligatoires (obligation légale France) ---
+  dpeLettre   String? // lettre A à G (performance énergie)
+  dpeValeur   Float?  // kWh/m²/an (valeur exacte)
+  gesLettre   String? // lettre A à G (émissions CO2)
+  gesValeur   Float?  // kg CO2/m²/an
+  dpeDate     DateTime? // date du diagnostic
+
+  // --- Charges & copropriété (mentions légales vente) ---
+  chargesAnnuelles    Float?   // €/an (art. 12 loi ALUR : moyenne sur 2 ans)
+  numCopropriete      Int?     // nombre de lots de la copropriété
+  quotePart           Float?   // quote-part du lot en % (ou millièmes)
+  syndicatActif       Boolean? // procédure en cours contre le syndicat (art. 13 : oui/non)
+  syndicProcedureInfo String?  // détail de la procédure le cas échéant
+  taxeFonciere        Float?   // €/an
+  chargeType          String?  // "copropriete" | "individuel" (maison individuelle)
+  honorairesInclus    String?  // qui paie les honoraires : "vendeur" | "acquéreur"
+
   // Taux d'honoraires personnalisé ; si null, on utilise le taux général (Setting)
   tauxPerso Float?
 

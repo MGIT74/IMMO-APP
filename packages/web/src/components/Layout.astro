@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-const { title = 'Ambassadeur Immo', description = '', theme = 'light' } = Astro.props;
+const { title = 'Ambassadeur Immo', description = '', theme = 'light', chrome = 'full' } = Astro.props;
 ---
 <!doctype html>
 <html lang="fr">
@@ -10,7 +10,9 @@ const { title = 'Ambassadeur Immo', description = '', theme = 'light' } = Astro.
 	<title>{title}</title>
 	{description && <meta name="description" content={description} />}
 </head>
-<body class:list={[theme === 'dark' ? 'theme-dark' : '']}>
+<body class:list={[theme === 'dark' ? 'theme-dark' : '', chrome === 'bare' ? 'chrome-bare' : '']}>
+	{chrome !== 'bare' && (
+	<>
 	<header class="site-header">
 		<a href="/" class="logo">Ambassadeur<span>immo</span></a>
 		<nav class="main-nav" id="main-nav">
@@ -27,9 +29,12 @@ const { title = 'Ambassadeur Immo', description = '', theme = 'light' } = Astro.
 			<span></span><span></span><span></span>
 		</button>
 	</header>
+	</>
+	)}
 
 	<slot />
 
+	{chrome !== 'bare' && (
 	<footer class="site-footer">
 		<div class="footer-inner">
 			<div>
@@ -54,11 +59,13 @@ const { title = 'Ambassadeur Immo', description = '', theme = 'light' } = Astro.
 		</div>
 		<p class="footer-copy">© 2026 Ambassadeur Immo — Tous droits réservés</p>
 	</footer>
+	)}
 
 	<script>
 		const burger = document.getElementById('burger');
 		const nav = document.getElementById('main-nav');
-		if (burger && nav) {
+		const bare = document.body.classList.contains('chrome-bare');
+		if (!bare && burger && nav) {
 			burger.addEventListener('click', () => {
 				const isOpen = nav.classList.toggle('is-open');
 				burger.classList.toggle('is-open', isOpen);
