@@ -13,15 +13,19 @@ const { title = 'Ambassadeur Immo', description = '', theme = 'light' } = Astro.
 <body class:list={[theme === 'dark' ? 'theme-dark' : '']}>
 	<header class="site-header">
 		<a href="/" class="logo">Ambassadeur<span>immo</span></a>
-		<nav>
+		<nav class="main-nav" id="main-nav">
 			<a href="/#accueil">Accueil</a>
 			<a href="/#pourquoi-moi">À propos</a>
 			<a href="/#bkeys">Bkeys</a>
 			<a href="/#vente">Vente</a>
 			<a href="/#achat">Achat</a>
 			<a href="/luxury" class="nav-luxury">Luxury</a>
+			<a href="tel:0660560200" class="call-btn call-btn-mobile">Appelez-moi</a>
 		</nav>
-		<a href="tel:0660560200" class="call-btn">Appelez-moi</a>
+		<a href="tel:0660560200" class="call-btn call-btn-desktop">Appelez-moi</a>
+		<button type="button" class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false">
+			<span></span><span></span><span></span>
+		</button>
 	</header>
 
 	<slot />
@@ -50,5 +54,25 @@ const { title = 'Ambassadeur Immo', description = '', theme = 'light' } = Astro.
 		</div>
 		<p class="footer-copy">© 2026 Ambassadeur Immo — Tous droits réservés</p>
 	</footer>
+
+	<script>
+		const burger = document.getElementById('burger');
+		const nav = document.getElementById('main-nav');
+		if (burger && nav) {
+			burger.addEventListener('click', () => {
+				const isOpen = nav.classList.toggle('is-open');
+				burger.classList.toggle('is-open', isOpen);
+				burger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+				document.body.classList.toggle('nav-open', isOpen);
+			});
+			nav.querySelectorAll('a').forEach((link) => {
+				link.addEventListener('click', () => {
+					nav.classList.remove('is-open');
+					burger.classList.remove('is-open');
+					document.body.classList.remove('nav-open');
+				});
+			});
+		}
+	</script>
 </body>
 </html>

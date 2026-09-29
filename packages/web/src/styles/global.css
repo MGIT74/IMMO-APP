@@ -29,8 +29,12 @@ body {
 /* --- Grille de cartes --- */
 .biens-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 	gap: 24px;
+}
+@media (max-width: 600px) {
+	.biens-grid { grid-template-columns: 1fr; }
+	.container { padding: 20px 18px; }
 }
 
 /* --- Carte bien --- */
@@ -130,18 +134,67 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 20px 32px;
+	padding: 18px 32px;
 	background: #fff;
 	position: sticky;
 	top: 0;
 	z-index: 50;
+	gap: 16px;
 }
-.logo { font-weight: 800; font-size: 20px; color: var(--immo-dark); text-decoration: none; }
+.logo { font-weight: 800; font-size: 20px; color: var(--immo-dark); text-decoration: none; flex-shrink: 0; }
 .logo span { display: block; font-weight: 400; font-size: 13px; }
 .logo-white { color: #fff; }
-.site-header nav { display: flex; gap: 28px; }
-.site-header nav a { color: var(--immo-dark); text-decoration: none; font-weight: 600; font-size: 14px; }
-.call-btn { background: var(--immo-dark); color: #fff; padding: 12px 22px; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 14px; }
+.site-header .main-nav { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+.site-header nav a { color: var(--immo-dark); text-decoration: none; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.call-btn { background: var(--immo-dark); color: #fff; padding: 12px 22px; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.call-btn-mobile { display: none; }
+
+.burger {
+	display: none;
+	flex-direction: column;
+	justify-content: center;
+	gap: 5px;
+	width: 34px;
+	height: 34px;
+	background: none;
+	border: none;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+.burger span { display: block; width: 100%; height: 2px; background: var(--immo-dark); transition: transform .2s ease, opacity .2s ease; }
+body.theme-dark .burger span { background: #f5f0e4; }
+.burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.is-open span:nth-child(2) { opacity: 0; }
+.burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+body.nav-open { overflow: hidden; }
+
+@media (max-width: 860px) {
+	.site-header { padding: 14px 20px; }
+	.burger { display: flex; }
+	.call-btn-desktop { display: none; }
+	.site-header .main-nav {
+		position: fixed;
+		inset: 0 0 0 auto;
+		top: 66px;
+		width: 100%;
+		max-width: 340px;
+		height: calc(100vh - 66px);
+		background: #fff;
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 28px 28px;
+		gap: 20px;
+		transform: translateX(100%);
+		transition: transform .25s ease;
+		box-shadow: -10px 0 30px rgba(0,0,0,.08);
+		overflow-y: auto;
+	}
+	body.theme-dark .site-header .main-nav { background: #0b0b0b; }
+	.site-header .main-nav.is-open { transform: translateX(0); }
+	.site-header .main-nav a { font-size: 17px; }
+	.call-btn-mobile { display: inline-block; margin-top: 10px; width: 100%; text-align: center; }
+}
 
 /* --- Hero --- */
 .hero {
@@ -176,6 +229,10 @@ body {
 .section h2 em { font-style: normal; font-weight: 400; color: #777; }
 .section-sub { color: #777; margin-top: -10px; margin-bottom: 30px; }
 .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: #999; text-align: center; }
+@media (max-width: 600px) {
+	.section { padding: 44px 20px; }
+	.hero { padding: 40px 20px; min-height: 60vh; }
+}
 
 /* --- À propos --- */
 .about { display: grid; grid-template-columns: 260px 1fr; gap: 40px; align-items: center; }
@@ -219,6 +276,7 @@ body {
 .footer-phone { font-size: 20px; font-weight: 700; color: #fff; margin-top: 8px; }
 .footer-copy { text-align: center; color: #777; font-size: 12px; margin-top: 40px; }
 @media (max-width: 700px) { .footer-inner { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px) { .footer-inner { grid-template-columns: 1fr; gap: 24px; } }
 
 /* --- Thème sombre (page Luxury) --- */
 body.theme-dark {
@@ -431,4 +489,10 @@ body.theme-dark .call-btn {
 	.lux-stats-row { gap: 24px; }
 	.lux-footer-row { align-items: flex-start; }
 	.lux-type-label { text-align: left; }
+}
+
+@media (max-width: 600px) {
+	.lux-hero { padding: 40px 22px; min-height: 60vh; }
+	.lux-stats-panel { padding: 28px 22px; }
+	.luxury-hero { padding: 60px 22px 36px; }
 }
