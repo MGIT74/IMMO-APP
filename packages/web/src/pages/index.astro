@@ -5,9 +5,85 @@ import { getBiens } from '../lib/api.js';
 
 const biens = await getBiens();
 ---
-<Layout title="Nos biens en vente">
-	<div class="container">
-		<h1 class="page-title">Nos biens en vente</h1>
+<Layout
+	title="Vendre votre bien à Saint-Julien-en-Genevois à 2% — Ambassadeur Immo"
+	description="Ambassadeur immobilier à Saint-Julien-en-Genevois, Annemasse, Viry. Vendez à 2% d'honoraires avec Bkeys. Eric — 06 60 56 02 00."
+>
+	<!-- Hero -->
+	<section id="accueil" class="hero" style="background-image:url('https://ambassadeur-immo.com/wp-content/uploads/2026/08/photo-villa-home-blanc.jpg');">
+		<div class="hero-overlay"></div>
+		<div class="hero-content">
+			<h1>Vendez votre bien en toute confiance.</h1>
+			<h2>Avec un voisin qui vous accompagne.</h2>
+			<a href="#contact" class="btn-primary">Contactez-moi</a>
+			<p class="hero-zones">Saint-Julien-En-Genevois — Annemasse — Viry — Valleiry — Archamps — Cruseilles</p>
+		</div>
+	</section>
+
+	<!-- À propos -->
+	<section id="pourquoi-moi" class="section about">
+		<img src="https://ambassadeur-immo.com/wp-content/uploads/2026/05/ERIC-PROFIL.jpeg" alt="Eric" class="about-photo" />
+		<div>
+			<h2>Pas un agent. Un ambassadeur de confiance.</h2>
+			<p>
+				Je suis Eric, votre Ambassadeur <strong>Bkeys</strong> à Saint-Julien-En-Genevois, Annemasse et alentours.
+				Je suis votre interlocuteur local : je vous présente l'estimation réalisée par <strong>Bkeys</strong>,
+				j'ouvre la porte aux acquéreurs pour les visites, et <strong>Bkeys</strong> s'occupe de toute la partie
+				transaction. Vous restez maître de votre vente.
+			</p>
+			<a href="#contact" class="btn-primary">Contactez-moi</a>
+		</div>
+	</section>
+
+	<!-- Pourquoi Bkeys -->
+	<section id="bkeys" class="section">
+		<p class="eyebrow">— NOTRE DIFFÉRENCE —</p>
+		<h2>Pourquoi choisir Bkeys plutôt qu'<em>une agence traditionnelle</em> ?</h2>
+		<div class="compare-grid">
+			<div class="compare-card">
+				<div class="compare-number">2%</div>
+				<h3>Taux d'honoraires</h3>
+				<p>Vendez votre bien avec des honoraires 2 à 3 fois moins chers qu'une agence classique. Vous gardez d'avantage de valeur sur votre vente, sans compromis sur le service.</p>
+				<p class="compare-vs"><em>vs 5 à 7% en agence traditionnelle</em></p>
+			</div>
+			<div class="compare-card">
+				<div class="compare-number">1 clic</div>
+				<h3>Mandat Bkeys résiliable en un clic</h3>
+				<p>Aucun engagement contraignant. Notre mandat est résiliable instantanément depuis votre espace personnel. Vous restez libre, à tout moment.</p>
+				<p class="compare-vs"><em>vs mandats exclusifs longue durée en agence</em></p>
+			</div>
+		</div>
+	</section>
+
+	<!-- Étapes -->
+	<section id="vente" class="section steps-section">
+		<p class="eyebrow">— VOUS VENDEZ ? —</p>
+		<h2>Je vous accompagne <em>de l'estimation à la signature</em></h2>
+		<p class="section-sub">4 étapes, un service complet avec seulement 2% d'honoraires</p>
+		<div class="steps-grid">
+			<div class="step"><div class="step-num">1</div><h3>Estimation gratuite</h3><p>Je vous accompagne pour obtenir une estimation via la plateforme Bkeys.</p></div>
+			<div class="step"><div class="step-num">2</div><h3>Diffusion réseau national</h3><p>Votre bien publié sur la plateforme Bkeys et son réseau national d'acquéreurs qualifiés.</p></div>
+			<div class="step"><div class="step-num">3</div><h3>Visites accompagnées</h3><p>J'organise les visites pour le compte du vendeur.</p></div>
+			<div class="step"><div class="step-num">4</div><h3>Suivi jusqu'à la vente</h3><p>Bkeys assure le suivi administratif jusqu'à la signature.</p></div>
+		</div>
+	</section>
+
+	<!-- Achat -->
+	<section id="achat" class="section achat-section">
+		<p class="eyebrow">— VOUS CHERCHEZ UN BIEN ? —</p>
+		<h2>Trouvez votre bien idéal, <em>en toute sécurité</em></h2>
+		<p class="section-sub">Consultez les biens disponibles sur la plateforme Bkeys. Je vous fais visiter localement, Bkeys encadre la transaction.</p>
+		<div class="achat-grid">
+			<div><h3>Recherche sur mesure</h3><p>Je vous mets en relation avec des biens disponibles sur la plateforme Bkeys.</p></div>
+			<div><h3>Plateforme Bkeys sécurisée</h3><p>Processus 100% sécurisé et transparent.</p></div>
+			<div><h3>Visites accompagnées</h3><p>Je vous accompagne pour chaque visite.</p></div>
+		</div>
+		<a href="#contact" class="btn-primary">Décrire mon projet d'achat</a>
+	</section>
+
+	<!-- Biens en vente -->
+	<section class="section">
+		<h2>Nos biens en ventes <em>chez Bkeys</em></h2>
 		{biens.length === 0 ? (
 			<p>Aucun bien pour le moment.</p>
 		) : (
@@ -15,5 +91,12 @@ const biens = await getBiens();
 				{biens.map((bien) => <PropertyCard bien={bien} />)}
 			</div>
 		)}
-	</div>
+	</section>
+
+	<!-- Contact -->
+	<section id="contact" class="section contact-section">
+		<h2>Une question ? Un projet de vente ?</h2>
+		<p>Je suis disponible pour répondre à toutes vos questions.</p>
+		<a href="tel:0660560200" class="btn-primary">06 60 56 02 00</a>
+	</section>
 </Layout>

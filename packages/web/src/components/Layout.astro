@@ -1,15 +1,53 @@
 ---
 import '../styles/global.css';
-const { title = 'Nos biens' } = Astro.props;
+const { title = 'Ambassadeur Immo', description = '' } = Astro.props;
 ---
 <!doctype html>
 <html lang="fr">
 <head>
 	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 	<title>{title}</title>
+	{description && <meta name="description" content={description} />}
 </head>
 <body>
+	<header class="site-header">
+		<a href="/" class="logo">Ambassadeur<span>immo</span></a>
+		<nav>
+			<a href="/#accueil">Accueil</a>
+			<a href="/#pourquoi-moi">À propos</a>
+			<a href="/#bkeys">Bkeys</a>
+			<a href="/#vente">Vente</a>
+			<a href="/#achat">Achat</a>
+		</nav>
+		<a href="tel:0660560200" class="call-btn">Appelez-moi</a>
+	</header>
+
 	<slot />
+
+	<footer class="site-footer">
+		<div class="footer-inner">
+			<div>
+				<div class="logo logo-white">Ambassadeur<span>immo</span></div>
+				<p class="footer-phone">06 60 56 02 00</p>
+			</div>
+			<div>
+				<strong>Adresse</strong>
+				<p>Grande Rue<br />74 160<br />Saint-Julien-En-Genevois</p>
+			</div>
+			<div>
+				<strong>Informations</strong>
+				<p><a href="/mentions-legales">Mentions légales</a></p>
+			</div>
+			<div>
+				<strong>Suivez-nous</strong>
+				<p>
+					<a href="https://www.facebook.com/bkeyshautesavoie" target="_blank" rel="noopener noreferrer">Facebook</a><br />
+					<a href="https://www.instagram.com/bkeys_eric/" target="_blank" rel="noopener noreferrer">Instagram</a>
+				</p>
+			</div>
+		</div>
+		<p class="footer-copy">© 2026 Ambassadeur Immo — Tous droits réservés</p>
+	</footer>
 </body>
 </html>

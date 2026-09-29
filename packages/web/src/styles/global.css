@@ -124,3 +124,98 @@ body {
 
 .likes-btn { background: none; border: none; cursor: pointer; color: #999; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .likes-btn.is-liked { color: #e53935; }
+
+/* --- Header --- */
+.site-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 20px 32px;
+	background: #fff;
+	position: sticky;
+	top: 0;
+	z-index: 50;
+}
+.logo { font-weight: 800; font-size: 20px; color: var(--immo-dark); text-decoration: none; }
+.logo span { display: block; font-weight: 400; font-size: 13px; }
+.logo-white { color: #fff; }
+.site-header nav { display: flex; gap: 28px; }
+.site-header nav a { color: var(--immo-dark); text-decoration: none; font-weight: 600; font-size: 14px; }
+.call-btn { background: var(--immo-dark); color: #fff; padding: 12px 22px; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 14px; }
+
+/* --- Hero --- */
+.hero {
+	position: relative;
+	min-height: 70vh;
+	background-size: cover;
+	background-position: center;
+	display: flex;
+	align-items: flex-end;
+	padding: 60px 32px;
+}
+.hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,.1)); }
+.hero-content { position: relative; z-index: 2; color: #fff; max-width: 600px; }
+.hero-content h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; margin: 0; }
+.hero-content h2 { font-size: clamp(18px, 3vw, 24px); font-weight: 400; margin: 8px 0 24px; }
+.hero-zones { margin-top: 20px; font-size: 13px; opacity: .9; }
+
+.btn-primary {
+	display: inline-block;
+	background: var(--immo-dark);
+	color: #fff;
+	padding: 14px 26px;
+	border-radius: 999px;
+	text-decoration: none;
+	font-weight: 700;
+	font-size: 15px;
+}
+
+/* --- Sections génériques --- */
+.section { max-width: 1100px; margin: 0 auto; padding: 60px 32px; }
+.section h2 { font-size: clamp(24px, 4vw, 34px); font-weight: 800; }
+.section h2 em { font-style: normal; font-weight: 400; color: #777; }
+.section-sub { color: #777; margin-top: -10px; margin-bottom: 30px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: #999; text-align: center; }
+
+/* --- À propos --- */
+.about { display: grid; grid-template-columns: 260px 1fr; gap: 40px; align-items: center; }
+.about-photo { width: 100%; border-radius: 20px; object-fit: cover; aspect-ratio: 1; }
+@media (max-width: 700px) { .about { grid-template-columns: 1fr; } }
+
+/* --- Comparaison Bkeys --- */
+.compare-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 30px; }
+.compare-card { background: var(--immo-white); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+.compare-number { font-size: 44px; font-weight: 800; }
+.compare-vs { color: #999; font-size: 13px; margin-top: 12px; }
+@media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+
+/* --- Étapes --- */
+.steps-section { text-align: center; }
+.steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 30px; text-align: left; }
+.step { background: var(--immo-white); border-radius: 16px; padding: 24px; }
+.step-num { font-size: 28px; font-weight: 800; color: #ccc; }
+@media (max-width: 900px) { .steps-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 550px) { .steps-grid { grid-template-columns: 1fr; } }
+
+/* --- Achat --- */
+.achat-section { text-align: center; }
+.achat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 30px 0 36px; text-align: left; }
+.achat-grid > div { background: var(--immo-white); border-radius: 16px; padding: 24px; }
+@media (max-width: 700px) { .achat-grid { grid-template-columns: 1fr; } }
+
+/* --- Contact --- */
+.contact-section { text-align: center; }
+.contact-section p { color: #777; margin-bottom: 24px; }
+
+/* --- Mentions légales --- */
+.legal-section { max-width: 750px; line-height: 1.7; }
+.legal-section h1 { font-size: 28px; margin-bottom: 24px; }
+
+/* --- Footer --- */
+.site-footer { background: var(--immo-dark); color: #ccc; padding: 50px 32px 24px; margin-top: 60px; }
+.footer-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
+.footer-inner strong { color: #fff; display: block; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; }
+.footer-inner a { color: #ccc; text-decoration: none; }
+.footer-phone { font-size: 20px; font-weight: 700; color: #fff; margin-top: 8px; }
+.footer-copy { text-align: center; color: #777; font-size: 12px; margin-top: 40px; }
+@media (max-width: 700px) { .footer-inner { grid-template-columns: repeat(2, 1fr); } }
