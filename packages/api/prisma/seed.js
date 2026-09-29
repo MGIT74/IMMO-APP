@@ -62,7 +62,7 @@ async function main() {
     await prisma.bien.create({
       data: {
         titre: 'Villa Belvédère',
-        type: 'Luxury',
+        type: 'Maison',
         prix: 1250000,
         ville: 'Saint-Julien-en-Genevois',
         codePostal: '74160',
