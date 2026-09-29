@@ -46,6 +46,7 @@ model Bien {
   boutonUrl   String?
 
   photos    Photo[]
+  plans     PlanPdf[]
   equipements Equipement[]
   leads     Lead[]
   likes     Like[]
@@ -92,6 +93,15 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([bienId, visitorId])
+}
+
+model PlanPdf {
+  id     Int    @id @default(autoincrement())
+  bienId Int
+  bien   Bien   @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  url    String
+  label  String @default("Plan")
+  ordre  Int    @default(0)
 }
 
 // Réglages généraux clé/valeur (taux d'honoraires par défaut, etc.)

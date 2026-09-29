@@ -129,6 +129,136 @@ body {
 .likes-btn { background: none; border: none; cursor: pointer; color: #999; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .likes-btn.is-liked { color: #e53935; }
 
+/* ==================== Fiche détail d'un bien ==================== */
+.detail-wrap {
+	display: grid;
+	grid-template-columns: 55% 45%;
+	min-height: 100vh;
+}
+
+.detail-gallery {
+	position: relative;
+	background: #111;
+}
+
+.detail-gallery-main {
+	position: relative;
+	height: 70vh;
+	min-height: 480px;
+}
+
+.detail-slides { position: absolute; inset: 0; }
+.detail-slide {
+	position: absolute; inset: 0; width: 100%; height: 100%;
+	object-fit: cover; opacity: 0; transition: opacity .3s ease;
+}
+.detail-slide.is-active { opacity: 1; }
+.detail-slide-placeholder { position: absolute; inset: 0; background: linear-gradient(135deg, #333, #111); }
+
+.detail-badge {
+	position: absolute; top: 24px; left: 24px; z-index: 3;
+	display: flex; align-items: center; gap: 8px;
+	background: rgba(0,0,0,.55); color: #fff;
+	padding: 7px 14px 7px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
+}
+.detail-badge-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c, #43a047); position: relative; }
+.detail-badge-dot.is-blink { animation: immo-blink 1.1s ease-in-out infinite; }
+.detail-badge-dot.is-pulse::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--c, #ff9800); animation: immo-pulse 1.6s ease-out infinite; }
+
+.detail-icon-actions {
+	position: absolute; top: 24px; right: 24px; z-index: 3;
+	display: flex; gap: 10px;
+}
+.detail-icon-btn {
+	width: 42px; height: 42px; border-radius: 50%;
+	background: rgba(255,255,255,.9); border: none; cursor: pointer;
+	font-size: 17px; color: #333; display: flex; align-items: center; justify-content: center;
+}
+.detail-icon-btn.is-liked { color: #e53935; }
+
+.detail-dots {
+	position: absolute; bottom: 20px; left: 0; right: 0; z-index: 3;
+	display: flex; justify-content: center; gap: 6px;
+}
+.detail-dots button { width: 8px; height: 8px; border-radius: 50%; border: none; background: rgba(255,255,255,.5); cursor: pointer; padding: 0; }
+.detail-dots button.is-active { background: #fff; }
+
+.detail-thumbs {
+	display: flex; gap: 10px; padding: 14px; overflow-x: auto;
+	background: #111;
+}
+.detail-thumb {
+	width: 72px; height: 56px; object-fit: cover; border-radius: 8px;
+	cursor: pointer; opacity: .55; flex-shrink: 0; border: 2px solid transparent;
+}
+.detail-thumb.is-active { opacity: 1; border-color: #fff; }
+
+.detail-info {
+	padding: 44px 48px;
+	overflow-y: auto;
+}
+.detail-info-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.detail-info h1 { font-size: clamp(24px, 3vw, 32px); font-weight: 800; margin: 0; }
+.detail-location { color: #888; font-size: 14px; margin: 8px 0 0; }
+.detail-like-count { display: flex; align-items: center; gap: 4px; color: #999; font-size: 14px; white-space: nowrap; }
+
+.detail-desc { color: #555; line-height: 1.7; margin: 20px 0; }
+
+.detail-price-row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.detail-price { font-size: 30px; font-weight: 800; }
+.detail-livraison { color: #777; font-size: 13px; }
+
+.detail-stats {
+	display: flex;
+	gap: 32px;
+	padding: 18px 0;
+	border-top: 1px solid #eee;
+	border-bottom: 1px solid #eee;
+	margin-bottom: 24px;
+}
+.detail-stat { display: flex; flex-direction: column; }
+.detail-stat-value { font-size: 26px; font-weight: 800; }
+.detail-stat-label { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: .04em; }
+
+.detail-type { display: inline-block; background: var(--immo-bg); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; margin-bottom: 30px; }
+
+.detail-section { margin-bottom: 32px; }
+.detail-section h2 { font-size: 17px; font-weight: 800; margin-bottom: 16px; }
+
+.detail-amenities { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 20px; }
+.detail-amenity { font-size: 14px; color: #444; }
+
+.detail-plans { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+.detail-plan-card { border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+.detail-plan-label { padding: 10px 14px; font-weight: 700; font-size: 13px; background: var(--immo-bg); }
+.detail-plan-card iframe { width: 100%; height: 220px; border: none; display: block; background: #f4f4f2; }
+.detail-plan-link { display: block; text-align: center; padding: 10px; font-size: 12px; font-weight: 600; color: var(--immo-dark); text-decoration: none; border-top: 1px solid #eee; }
+
+.detail-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 30px; }
+.detail-cta-btn { width: auto; flex: 1; min-width: 200px; }
+.detail-cta-secondary { display: inline-flex; align-items: center; justify-content: center; padding: 13px 18px; border: 1px solid #ddd; border-radius: 14px; text-decoration: none; color: var(--immo-dark); font-weight: 600; font-size: 15px; }
+
+.detail-lead-form {
+	background: var(--immo-bg);
+	border-radius: 16px;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.detail-lead-form h3 { margin: 0 0 6px; font-size: 15px; }
+.detail-lead-form input, .detail-lead-form textarea {
+	padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit; font-size: 14px;
+}
+.detail-lead-form textarea { resize: vertical; min-height: 70px; }
+
+@media (max-width: 960px) {
+	.detail-wrap { grid-template-columns: 1fr; }
+	.detail-gallery-main { height: 50vh; min-height: 340px; }
+	.detail-info { padding: 28px 20px; }
+	.detail-amenities { grid-template-columns: 1fr; }
+}
+
 /* --- Header --- */
 .site-header {
 	display: flex;

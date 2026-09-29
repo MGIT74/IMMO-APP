@@ -69,3 +69,48 @@ uploadsRouter.put('/:bienId/order', async (req, res) => {
 
   res.json({ ok: true });
 });
+
+// --- Plans PDF ---
+const uploadPdf = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 25 * 1024 * 1024 },
+	fileFilter: (req, file, cb) => {
+		if (file.mimetype !== 'application/pdf') return cb(new Error('Seuls les fichiers PDF sont acceptés.'));
+		cb(null, true);
+	},
+});
+
+uploadsRouter.post('/:bienId/plan', uploadPdf.single('plan'), async (req, res) => {
+  const bienId = Number(req.params.bienId);
+  if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu.' });
+
+  const bienDir = path.join(UPLOADS_DIR, `bien-${bienId}`, 'plans');
+  await fs.mkdir(bienDir, { recursive: true });
+
+  const filename = `${Date.now()}.pdf`;
+  await fs.writeFile(path.join(bienDir, filename), req.file.buffer);
+
+  const lastPlan = await prisma.planPdf.findFirst({ where: { bienId }, orderBy: { ordre: 'desc' } });
+
+  const plan = await prisma.planPdf.create({
+    data: {
+      bienId,
+      url: `/uploads/bien-${bienId}/plans/${filename}`,
+      label: (req.body.label || 'Plan').slice(0, 60),
+      ordre: lastPlan ? lastPlan.ordre + 1 : 0,
+    },
+  });
+
+  res.status(201).json(plan);
+});
+
+uploadsRouter.delete('/plan/:planId', async (req, res) => {
+  const plan = await prisma.planPdf.findUnique({ where: { id: Number(req.params.planId) } });
+  if (!plan) return res.status(404).json({ error: 'Plan introuvable.' });
+
+  const filePath = path.join(process.cwd(), plan.url);
+  await fs.unlink(filePath).catch(() => {});
+
+  await prisma.planPdf.delete({ where: { id: plan.id } });
+  res.status(204).end();
+});

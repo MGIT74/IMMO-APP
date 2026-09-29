@@ -62,6 +62,18 @@ export const api = {
   deletePhoto: (photoId) => request(`/api/admin/uploads/${photoId}`, { method: 'DELETE' }),
   reorderPhotos: (bienId, order) =>
     request(`/api/admin/uploads/${bienId}/order`, { method: 'PUT', body: JSON.stringify({ order }) }),
+
+  uploadPlan: (bienId, file, label) => {
+    const formData = new FormData();
+    formData.append('plan', file);
+    formData.append('label', label || 'Plan');
+    return fetch(`${API_URL}/api/admin/uploads/${bienId}/plan`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: formData,
+    }).then((r) => r.json());
+  },
+  deletePlan: (planId) => request(`/api/admin/uploads/plan/${planId}`, { method: 'DELETE' }),
 };
 
 export { API_URL, getToken };

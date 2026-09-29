@@ -8,6 +8,7 @@ export const biensAdminRouter = Router();
 
 const includeRelations = {
   photos: { orderBy: { ordre: 'asc' } },
+  plans: { orderBy: { ordre: 'asc' } },
   equipements: { orderBy: { ordre: 'asc' } },
   _count: { select: { likes: true } },
 };

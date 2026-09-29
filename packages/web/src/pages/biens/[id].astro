@@ -12,115 +12,148 @@ if (!bien) {
 const badgeTexte = bien.vendu ? 'Vendu' : bien.etatTexte;
 const badgeCouleur = bien.vendu ? '#e53935' : (bien.etatCouleur || '#43a047');
 const badgeAnim = bien.vendu ? '' : (bien.etatAnim === 'blink' ? 'is-blink' : bien.etatAnim === 'pulse' ? 'is-pulse' : '');
+const photos = bien.photos || [];
+const plans = bien.plans || [];
+const description = bien.description || `${bien.type || 'Bien'} à ${bien.ville || ''}${bien.codePostal ? ' - ' + bien.codePostal : ''}.`;
 ---
 <Layout title={bien.titre}>
-	<div class="container" style="max-width: 700px;">
-		<div class="immo-card" style="cursor:default;">
-			<div class="immo-hero">
-				<div class="immo-hero-slides">
-					{bien.photos?.length > 0 ? (
-						bien.photos.map((photo, i) => (
-							<img src={photo.url} alt={bien.titre} class={`immo-hero-slide ${i === 0 ? 'is-active' : ''}`} />
+	<div class="detail-wrap">
+		<!-- Colonne photo -->
+		<div class="detail-gallery">
+			<div class="detail-gallery-main">
+				<div class="detail-slides">
+					{photos.length > 0 ? (
+						photos.map((p, i) => (
+							<img src={p.url} alt={bien.titre} class={`detail-slide ${i === 0 ? 'is-active' : ''}`} />
 						))
-					) : null}
+					) : (
+						<div class="detail-slide-placeholder"></div>
+					)}
 				</div>
-				<div class="immo-hero-shade immo-hero-shade-top"></div>
-				<div class="immo-hero-shade immo-hero-shade-bottom"></div>
 
 				{badgeTexte && (
-					<div class="immo-badge">
-						<span class:list={["immo-badge-dot", badgeAnim]} style={`--c:${badgeCouleur}`}></span>
+					<div class="detail-badge">
+						<span class:list={["detail-badge-dot", badgeAnim]} style={`--c:${badgeCouleur}`}></span>
 						<span>{badgeTexte}</span>
 					</div>
 				)}
 
-				<div class="immo-hero-top">
-					<div class="immo-hero-name">{bien.titre}</div>
-					{bien.ville && <div class="immo-hero-location">{bien.ville}{bien.codePostal ? ` - ${bien.codePostal}` : ''}</div>}
+				<div class="detail-icon-actions">
+					<button type="button" class="detail-icon-btn" id="like-btn" data-bien-id={bien.id} aria-label="Aimer ce bien">♥</button>
+					<button type="button" class="detail-icon-btn" id="share-btn" aria-label="Partager">⤴</button>
 				</div>
 
-				<div class="immo-hero-bottom">
-					<div>
-						<div class="immo-hero-price">{Number(bien.prix).toLocaleString('fr-FR')} €</div>
-						{bien.pieces && <div class="immo-hero-pieces">{bien.pieces} pièce{bien.pieces > 1 ? 's' : ''}</div>}
+				{photos.length > 1 && (
+					<div class="detail-dots" id="detail-dots">
+						{photos.map((_, i) => <button type="button" data-i={i} class={i === 0 ? 'is-active' : ''}></button>)}
+					</div>
+				)}
+			</div>
+
+			{photos.length > 1 && (
+				<div class="detail-thumbs">
+					{photos.map((p, i) => (
+						<img src={p.url} alt="" class={`detail-thumb ${i === 0 ? 'is-active' : ''}`} data-i={i} />
+					))}
+				</div>
+			)}
+		</div>
+
+		<!-- Colonne infos -->
+		<div class="detail-info">
+			<div class="detail-info-top">
+				<div>
+					<h1>{bien.titre}</h1>
+					{bien.ville && <p class="detail-location">📍 {bien.ville}{bien.codePostal ? ` - ${bien.codePostal}` : ''}</p>}
+				</div>
+				<div class="detail-like-count">
+					<span id="like-count">{bien.likes || 0}</span> ♥
+				</div>
+			</div>
+
+			<p class="detail-desc" id="detail-desc">{description}</p>
+
+			<div class="detail-price-row">
+				<div class="detail-price">{Number(bien.prix).toLocaleString('fr-FR')} €</div>
+				{bien.livraison && <div class="detail-livraison">📅 {bien.livraison}</div>}
+			</div>
+
+			<div class="detail-stats">
+				{bien.surface && <div class="detail-stat"><span class="detail-stat-value">{bien.surface}</span><span class="detail-stat-label">m²</span></div>}
+				{bien.pieces && <div class="detail-stat"><span class="detail-stat-value">{bien.pieces}</span><span class="detail-stat-label">pièces</span></div>}
+				{bien.chambres && <div class="detail-stat"><span class="detail-stat-value">{bien.chambres}</span><span class="detail-stat-label">chambres</span></div>}
+			</div>
+
+			{bien.type && <p class="detail-type">{bien.type}</p>}
+
+			{bien.equipements?.length > 0 && (
+				<div class="detail-section">
+					<h2>Équipements</h2>
+					<div class="detail-amenities">
+						{bien.equipements.map((eq) => <div class="detail-amenity">✓ {eq.texte}</div>)}
 					</div>
 				</div>
+			)}
 
-				{bien.photos?.length > 1 && (
-					<div class="immo-hero-dots" id="hero-dots">
-						{bien.photos.map((_, i) => (
-							<button type="button" data-i={i} class={i === 0 ? 'is-active' : ''}></button>
+			{plans.length > 0 && (
+				<div class="detail-section">
+					<h2>Plans</h2>
+					<div class="detail-plans">
+						{plans.map((plan) => (
+							<div class="detail-plan-card">
+								<div class="detail-plan-label">{plan.label}</div>
+								<iframe src={`${plan.url}#toolbar=0&view=FitH`} title={plan.label} loading="lazy"></iframe>
+								<a href={plan.url} target="_blank" rel="noopener noreferrer" class="detail-plan-link">Ouvrir en plein écran ↗</a>
+							</div>
 						))}
 					</div>
-				)}
-			</div>
-
-			<div class="immo-body">
-				<div style="display:flex;justify-content:space-between;align-items:center;">
-					{bien.type && <div class="immo-type">{bien.type}</div>}
-					<button class="likes-btn" id="like-btn" data-bien-id={bien.id}>
-						♥ <span id="like-count">{bien.likes || 0}</span>
-					</button>
 				</div>
+			)}
 
-				{bien.livraison && <p>📅 {bien.livraison}</p>}
-
-				<div class="immo-stats">
-					{bien.surface && <span>📐 {bien.surface} m²</span>}
-					{bien.pieces && <span>🚪 {bien.pieces} pièces</span>}
-					{bien.chambres && <span>🛏️ {bien.chambres} chambres</span>}
-				</div>
-
-				{bien.equipements?.length > 0 && (
-					<div class="immo-equip-list">
-						{bien.equipements.map((eq) => <div>• {eq.texte}</div>)}
-					</div>
-				)}
-
-				<form id="lead-form">
-					<input type="hidden" name="bienId" value={bien.id} />
-					<input type="text" name="website" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" />
-					<h3>Demander des informations</h3>
-					<input type="text" name="nom" placeholder="Votre nom" required style="width:100%;padding:10px;margin:6px 0;" />
-					<input type="email" name="email" placeholder="Votre email" style="width:100%;padding:10px;margin:6px 0;" />
-					<input type="tel" name="tel" placeholder="Votre téléphone" style="width:100%;padding:10px;margin:6px 0;" />
-					<textarea name="message" placeholder="Message (optionnel)" style="width:100%;padding:10px;margin:6px 0;"></textarea>
-					<button type="submit" class="immo-btn-primary">Envoyer ma demande</button>
-					<p id="lead-feedback"></p>
-				</form>
-
+			<div class="detail-cta">
+				<button type="button" class="btn-primary detail-cta-btn" id="open-lead-form">Demander des informations</button>
 				{bien.boutonTexte && bien.boutonUrl && (
-					<a href={bien.boutonUrl} target="_blank" rel="noopener noreferrer" class="immo-btn-primary" style="background:transparent;color:var(--immo-dark);border:1px solid #ddd;">
-						{bien.boutonTexte}
-					</a>
+					<a href={bien.boutonUrl} target="_blank" rel="noopener noreferrer" class="detail-cta-secondary">{bien.boutonTexte}</a>
 				)}
 			</div>
+
+			<form id="lead-form" class="detail-lead-form">
+				<input type="hidden" name="bienId" value={bien.id} />
+				<input type="text" name="website" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" />
+				<h3>Demander des informations</h3>
+				<input type="text" name="nom" placeholder="Votre nom" required />
+				<input type="email" name="email" placeholder="Votre email" />
+				<input type="tel" name="tel" placeholder="Votre téléphone" />
+				<textarea name="message" placeholder="Message (optionnel)"></textarea>
+				<button type="submit" class="btn-primary">Envoyer ma demande</button>
+				<p id="lead-feedback"></p>
+			</form>
 		</div>
 	</div>
 
 	<script define:vars={{ API_URL, bienId: bien.id }}>
-		// --- Carrousel photo ---
-		const slides = document.querySelectorAll('.immo-hero-slide');
-		const dots = document.querySelectorAll('#hero-dots button');
-		dots.forEach((dot, i) => {
-			dot.addEventListener('click', () => {
-				slides.forEach((s, si) => s.classList.toggle('is-active', si === i));
-				dots.forEach((d, di) => d.classList.toggle('is-active', di === i));
-			});
-		});
+		// --- Carrousel photo (points + vignettes synchronisés) ---
+		const slides = document.querySelectorAll('.detail-slide');
+		const dots = document.querySelectorAll('#detail-dots button');
+		const thumbs = document.querySelectorAll('.detail-thumb');
 
-		// --- Bouton like : identifiant anonyme stocké en localStorage ---
+		function showSlide(i) {
+			slides.forEach((s, si) => s.classList.toggle('is-active', si === i));
+			dots.forEach((d, di) => d.classList.toggle('is-active', di === i));
+			thumbs.forEach((t, ti) => t.classList.toggle('is-active', ti === i));
+		}
+		dots.forEach((dot, i) => dot.addEventListener('click', () => showSlide(i)));
+		thumbs.forEach((thumb, i) => thumb.addEventListener('click', () => showSlide(i)));
+
+		// --- Bouton like ---
 		let visitorId = localStorage.getItem('immo_visitor_id');
 		if (!visitorId) {
 			visitorId = crypto.randomUUID();
 			localStorage.setItem('immo_visitor_id', visitorId);
 		}
-
 		const likeBtn = document.getElementById('like-btn');
 		const likeCount = document.getElementById('like-count');
-		if (localStorage.getItem(`immo_liked_${bienId}`) === '1') {
-			likeBtn.classList.add('is-liked');
-		}
+		if (localStorage.getItem(`immo_liked_${bienId}`) === '1') likeBtn.classList.add('is-liked');
 
 		likeBtn.addEventListener('click', async () => {
 			const res = await fetch(`${API_URL}/api/likes/${bienId}`, {
@@ -134,21 +167,32 @@ const badgeAnim = bien.vendu ? '' : (bien.etatAnim === 'blink' ? 'is-blink' : bi
 			localStorage.setItem(`immo_liked_${bienId}`, data.liked ? '1' : '0');
 		});
 
+		// --- Partage ---
+		document.getElementById('share-btn').addEventListener('click', async () => {
+			if (navigator.share) {
+				navigator.share({ title: document.title, url: window.location.href }).catch(() => {});
+			} else {
+				await navigator.clipboard.writeText(window.location.href);
+				alert('Lien copié !');
+			}
+		});
+
+		// --- Ouvrir/scroller vers le formulaire ---
+		document.getElementById('open-lead-form').addEventListener('click', () => {
+			document.getElementById('lead-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+		});
+
 		// --- Formulaire de demande ---
 		const form = document.getElementById('lead-form');
 		const feedback = document.getElementById('lead-feedback');
-
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
-			const formData = new FormData(form);
-			const payload = Object.fromEntries(formData.entries());
-
+			const payload = Object.fromEntries(new FormData(form).entries());
 			const res = await fetch(`${API_URL}/api/leads`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload),
 			});
-
 			if (res.ok) {
 				feedback.textContent = 'Merci ! Votre demande a bien été envoyée.';
 				form.reset();

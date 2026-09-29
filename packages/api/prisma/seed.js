@@ -47,7 +47,7 @@ async function main() {
         publie: true,
         luxe: false,
         photos: {
-          create: [{ url: 'https://picsum.photos/seed/tilleuls-immo/1200/900', ordre: 0 }],
+          create: [{ url: 'https://placehold.co/1200x900/e5e5e2/6b6b6b?text=R%C3%A9sidence+Les+Tilleuls', ordre: 0 }],
         },
         equipements: {
           create: [
@@ -79,8 +79,8 @@ async function main() {
         publie: true,
         photos: {
           create: [
-            { url: 'https://picsum.photos/seed/belvedere-immo-1/1600/1000', ordre: 0 },
-            { url: 'https://picsum.photos/seed/belvedere-immo-2/1600/1000', ordre: 1 },
+            { url: 'https://placehold.co/1600x1000/1a1a1a/f5f0e4?text=Villa+Belv%C3%A9dere', ordre: 0 },
+            { url: 'https://placehold.co/1600x1000/141414/f5f0e4?text=Villa+Belv%C3%A9dere+-+2', ordre: 1 },
           ],
         },
         equipements: {

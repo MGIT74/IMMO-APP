@@ -139,6 +139,9 @@ button.danger { background: #e53935; }
 	font-weight: 600;
 }
 
+.plan-list { display: flex; flex-direction: column; gap: 8px; }
+.plan-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg); border-radius: 8px; font-size: 13px; }
+
 .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
 .stat-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; }

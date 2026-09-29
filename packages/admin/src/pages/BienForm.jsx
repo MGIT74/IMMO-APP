@@ -18,6 +18,9 @@ export default function BienForm() {
   const [bien, setBien] = useState(emptyBien);
   const [equipements, setEquipements] = useState([{ icone: 'salle_bain', valeur: '', texte: formatEquip('salle_bain', '') }]);
   const [photos, setPhotos] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [planLabel, setPlanLabel] = useState('');
+  const [uploadingPlan, setUploadingPlan] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -40,6 +43,7 @@ export default function BienForm() {
             : []
         );
         setPhotos(data.photos || []);
+        setPlans(data.plans || []);
       });
     }
   }, [id, isNew]);
@@ -120,6 +124,22 @@ export default function BienForm() {
     [newPhotos[index], newPhotos[target]] = [newPhotos[target], newPhotos[index]];
     setPhotos(newPhotos);
     await api.reorderPhotos(id, newPhotos.map((p) => p.id));
+  }
+
+  async function handleUploadPlan(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingPlan(true);
+    const plan = await api.uploadPlan(id, file, planLabel);
+    setPlans((p) => [...p, plan]);
+    setPlanLabel('');
+    setUploadingPlan(false);
+    e.target.value = '';
+  }
+
+  async function handleDeletePlan(planId) {
+    await api.deletePlan(planId);
+    setPlans((p) => p.filter((pl) => pl.id !== planId));
   }
 
   return (
@@ -245,6 +265,44 @@ export default function BienForm() {
               {uploading ? 'Envoi...' : '+ Ajouter une photo'}
               <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
             </label>
+          </>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Plans (PDF)</h2>
+        {isNew ? (
+          <p className="muted">Enregistrez d'abord le bien pour pouvoir ajouter des plans.</p>
+        ) : (
+          <>
+            {plans.length > 0 && (
+              <div className="plan-list">
+                {plans.map((plan) => (
+                  <div key={plan.id} className="plan-row">
+                    <span>📄 {plan.label}</span>
+                    <div className="actions">
+                      <a href={plan.url.startsWith('http') ? plan.url : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${plan.url}`} target="_blank" rel="noopener noreferrer">
+                        <button type="button">Voir</button>
+                      </a>
+                      <button type="button" className="danger" onClick={() => handleDeletePlan(plan.id)}>Supprimer</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                placeholder="Nom du plan (ex : Rez-de-chaussée)"
+                value={planLabel}
+                onChange={(e) => setPlanLabel(e.target.value)}
+                style={{ flex: 1, minWidth: 200 }}
+              />
+              <label className="upload-label">
+                {uploadingPlan ? 'Envoi...' : '+ Ajouter un plan PDF'}
+                <input type="file" accept="application/pdf" onChange={handleUploadPlan} disabled={uploadingPlan} style={{ display: 'none' }} />
+              </label>
+            </div>
           </>
         )}
       </div>
