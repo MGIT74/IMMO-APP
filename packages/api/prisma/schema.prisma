@@ -36,6 +36,7 @@ model Bien {
   vendu     Boolean  @default(false)
   publie    Boolean  @default(true) // false = masqué du site public
   luxe      Boolean  @default(false) // affiché dans la section "Luxury" (design noir)
+  description String? @db.Text // texte éditorial affiché sur la page Luxury
 
   // Taux d'honoraires personnalisé ; si null, on utilise le taux général (Setting)
   tauxPerso Float?

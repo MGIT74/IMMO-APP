@@ -267,27 +267,168 @@ body.theme-dark .call-btn {
 	color: #9c9484;
 	font-size: 15px;
 }
-.luxury-empty { text-align: center; color: #9c9484; }
+.luxury-empty { text-align: center; color: #9c9484; padding: 60px 32px; }
 
-.luxury-grid {
+/* --- Fiche éditoriale par bien (façon PlanetVision) --- */
+.lux-feature {
+	position: relative;
+	margin-bottom: 80px;
+}
+
+.lux-hero {
+	position: relative;
+	min-height: 82vh;
+	background-size: cover;
+	background-position: center;
+	background-color: #1a1a1a;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 60px 40px;
+	overflow: hidden;
+}
+
+.lux-hero-overlay {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to top, rgba(0,0,0,.75) 10%, rgba(0,0,0,.15) 55%, rgba(0,0,0,.35));
+}
+
+.lux-title {
+	position: relative;
+	z-index: 2;
+	font-size: clamp(48px, 11vw, 160px);
+	font-weight: 800;
+	line-height: 0.95;
+	text-transform: uppercase;
+	letter-spacing: -0.02em;
+	color: #f7f4ec;
+	margin: 0;
+	max-width: 100%;
+	word-break: break-word;
+}
+
+.lux-desc {
+	position: relative;
+	z-index: 2;
+	max-width: 480px;
+	color: #d8d2c2;
+	font-size: 16px;
+	line-height: 1.6;
+	margin-top: 28px;
+}
+
+.lux-footer {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	grid-template-columns: 40% 60%;
+	min-height: 320px;
+}
+
+.lux-plan-panel {
+	position: relative;
+	background: #f2ede3;
+	overflow: hidden;
+}
+.lux-plan-slides { position: absolute; inset: 0; }
+.lux-plan-slide {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	opacity: 0;
+	transition: opacity .35s ease;
+}
+.lux-plan-slide.is-active { opacity: 1; }
+.lux-plan-placeholder { position: absolute; inset: 0; background: linear-gradient(135deg, #e7e0cf, #d9d0b8); }
+
+.lux-stats-panel {
+	background: #0b0b0b;
+	padding: 44px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
 	gap: 30px;
 }
-.luxury-card {
-	display: block;
-	text-decoration: none;
-	color: inherit;
-	background: #141414;
-	border: 1px solid #262626;
-	border-radius: 4px;
-	overflow: hidden;
-	transition: border-color .2s ease;
+
+.lux-stats-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 40px;
 }
-.luxury-card:hover { border-color: #d4af37; }
-.luxury-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
-.luxury-card-body { padding: 24px; }
-.luxury-card-body h2 { font-size: 19px; font-weight: 400; letter-spacing: .03em; margin: 0 0 6px; color: #f5f0e4; }
-.luxury-location { color: #9c9484; font-size: 13px; margin: 0 0 16px; }
-.luxury-price { font-size: 24px; color: #d4af37; font-weight: 300; letter-spacing: .04em; margin: 0 0 16px; }
-.luxury-stats { display: flex; gap: 16px; font-size: 12px; color: #9c9484; border-top: 1px solid #262626; padding-top: 14px; }
+
+.lux-stat-icon {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #8a8375;
+	font-size: 13px;
+	margin-bottom: 10px;
+}
+.lux-stat-icon svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.lux-stat-value {
+	font-size: clamp(24px, 3vw, 34px);
+	font-weight: 800;
+	color: #f5f0e4;
+}
+
+.lux-footer-row {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.lux-pagination { display: flex; gap: 10px; }
+.lux-pagination button {
+	width: 40px; height: 40px;
+	border-radius: 50%;
+	border: 1px solid #333;
+	background: transparent;
+	color: #f5f0e4;
+	font-size: 18px;
+	cursor: pointer;
+}
+.lux-pagination button:hover { border-color: #d4af37; color: #d4af37; }
+
+.lux-type-label {
+	color: #d8d2c2;
+	font-size: 14px;
+	line-height: 1.4;
+	text-align: right;
+}
+.lux-type-label span { color: #d4af37; font-size: 20px; font-weight: 700; }
+
+.lux-thumbs { display: flex; }
+.lux-thumbs img {
+	width: 56px; height: 56px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid #0b0b0b;
+	margin-left: -16px;
+}
+.lux-thumbs img:first-child { margin-left: 0; }
+
+.lux-cta {
+	display: block;
+	text-align: center;
+	padding: 18px;
+	background: #141414;
+	color: #d4af37;
+	text-decoration: none;
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	border-top: 1px solid #262626;
+}
+.lux-cta:hover { background: #1a1a1a; }
+
+@media (max-width: 800px) {
+	.lux-footer { grid-template-columns: 1fr; }
+	.lux-plan-panel { min-height: 240px; }
+	.lux-stats-row { gap: 24px; }
+	.lux-footer-row { align-items: flex-start; }
+	.lux-type-label { text-align: left; }
+}

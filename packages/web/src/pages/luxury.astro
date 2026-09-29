@@ -12,27 +12,99 @@ const biensLuxe = biens.filter((b) => b.luxe);
 		<p class="luxury-sub">Une sélection de biens d'exception, choisis pour leur emplacement, leurs prestations et leur caractère unique.</p>
 	</section>
 
-	<section class="section">
-		{biensLuxe.length === 0 ? (
-			<p class="luxury-empty">Aucun bien de la sélection Luxury pour le moment.</p>
-		) : (
-			<div class="luxury-grid">
-				{biensLuxe.map((bien) => (
-					<a href={`/biens/${bien.id}`} class="luxury-card">
-						{bien.photos?.[0] && <img src={bien.photos[0].url} alt={bien.titre} />}
-						<div class="luxury-card-body">
-							<h2>{bien.titre}</h2>
-							{bien.ville && <p class="luxury-location">{bien.ville}{bien.codePostal ? ` - ${bien.codePostal}` : ''}</p>}
-							<p class="luxury-price">{Number(bien.prix).toLocaleString('fr-FR')} €</p>
-							<div class="luxury-stats">
-								{bien.surface && <span>{bien.surface} m²</span>}
-								{bien.pieces && <span>{bien.pieces} pièces</span>}
-								{bien.chambres && <span>{bien.chambres} chambres</span>}
+	{biensLuxe.length === 0 ? (
+		<p class="luxury-empty">Aucun bien de la sélection Luxury pour le moment.</p>
+	) : (
+		biensLuxe.map((bien, idx) => {
+			const photos = bien.photos?.length ? bien.photos : [];
+			const cover = photos[0]?.url;
+			const planImg = photos[1]?.url || photos[0]?.url;
+			return (
+				<section class="lux-feature" data-idx={idx}>
+					<div class="lux-hero" style={cover ? `background-image:url('${cover}')` : ''}>
+						<div class="lux-hero-overlay"></div>
+						<h2 class="lux-title">{bien.titre}</h2>
+						<p class="lux-desc">{bien.description || `${bien.type || 'Bien'} d'exception à ${bien.ville || ''}.`}</p>
+					</div>
+
+					<div class="lux-footer">
+						<div class="lux-plan-panel">
+							<div class="lux-plan-slides">
+								{photos.length > 0 ? (
+									photos.map((p, i) => (
+										<img src={p.url} alt={bien.titre} class={`lux-plan-slide ${i === 0 ? 'is-active' : ''}`} data-i={i} />
+									))
+								) : (
+									<div class="lux-plan-placeholder"></div>
+								)}
 							</div>
 						</div>
-					</a>
-				))}
-			</div>
-		)}
-	</section>
+
+						<div class="lux-stats-panel">
+							<div class="lux-stats-row">
+								<div class="lux-stat">
+									<div class="lux-stat-icon">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="4"/><path d="m11 11 8 8"/><path d="m17 15 3-3"/></svg>
+										<span>Livraison</span>
+									</div>
+									<div class="lux-stat-value">{bien.livraison || (bien.vendu ? 'Vendu' : 'Disponible')}</div>
+								</div>
+								<div class="lux-stat">
+									<div class="lux-stat-icon">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+										<span>Localisation</span>
+									</div>
+									<div class="lux-stat-value">{bien.ville || '—'}</div>
+								</div>
+								<div class="lux-stat">
+									<div class="lux-stat-icon">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/></svg>
+										<span>Surface</span>
+									</div>
+									<div class="lux-stat-value">{bien.surface ? `${bien.surface} M²` : '—'}</div>
+								</div>
+							</div>
+
+							<div class="lux-footer-row">
+								<div class="lux-pagination">
+									<button type="button" class="lux-prev" aria-label="Photo précédente">‹</button>
+									<button type="button" class="lux-next" aria-label="Photo suivante">›</button>
+								</div>
+
+								<div class="lux-type-label">
+									{bien.type || 'Bien'}<br /><span>{Number(bien.prix).toLocaleString('fr-FR')} €</span>
+								</div>
+
+								{photos.length > 1 && (
+									<div class="lux-thumbs">
+										{photos.slice(0, 3).map((p) => <img src={p.url} alt="" />)}
+									</div>
+								)}
+							</div>
+						</div>
+					</div>
+
+					<a href={`/biens/${bien.id}`} class="lux-cta">Voir la fiche complète →</a>
+				</section>
+			);
+		})
+	)}
+
+	<script>
+		document.querySelectorAll('.lux-feature').forEach((feature) => {
+			const slides = feature.querySelectorAll('.lux-plan-slide');
+			const prev = feature.querySelector('.lux-prev');
+			const next = feature.querySelector('.lux-next');
+			let current = 0;
+
+			function show(index) {
+				if (!slides.length) return;
+				current = (index + slides.length) % slides.length;
+				slides.forEach((s, i) => s.classList.toggle('is-active', i === current));
+			}
+
+			if (prev) prev.addEventListener('click', () => show(current - 1));
+			if (next) next.addEventListener('click', () => show(current + 1));
+		});
+	</script>
 </Layout>
