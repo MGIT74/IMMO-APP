@@ -1,0 +1,167 @@
+{
+  "name": "Pige Immo - Leboncoin + SeLoger → API",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7,13,20 * * *" }]
+        }
+      },
+      "id": "cron-lbc",
+      "name": "Cron Leboncoin (3x/jour)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-400, -100]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "30 10,17 * * *" }]
+        }
+      },
+      "id": "cron-seloger",
+      "name": "Cron SeLoger (2x/jour)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-400, 150]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/clearpath~leboncoin-immobilier/runs",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "token", "value": "={{ $credentials.apifyToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.apifyInput) }}"
+      },
+      "id": "apify-run-lbc",
+      "name": "Lancer Actor Leboncoin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-150, -100],
+      "credentials": {
+        "httpHeaderAuth": { "id": "apify-token-header", "name": "Apify Token" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/lexis-solutions~seloger-scraper/runs",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "token", "value": "={{ $credentials.apifyToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.apifyInput) }}"
+      },
+      "id": "apify-run-seloger",
+      "name": "Lancer Actor SeLoger",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-150, 150]
+    },
+    {
+      "parameters": {
+        "waitTimeInSeconds": 90
+      },
+      "id": "wait-run",
+      "name": "Attendre fin du run",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [100, 0],
+      "webhookId": "pige-wait"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/actor-runs/{{ $json.data.id }}?token={{ $credentials.apifyToken }}"
+      },
+      "id": "check-status",
+      "name": "Statut du run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.data.status }}", "operation": "equals", "value2": "SUCCEEDED" }]
+        }
+      },
+      "id": "if-succeeded",
+      "name": "Run terminé ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Statut du run').item.json.data.defaultDatasetId }}/items?clean=true&token={{ $credentials.apifyToken }}"
+      },
+      "id": "get-items",
+      "name": "Récupérer les annonces",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, -50]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "code": "return { source: $('Lancer Actor Leboncoin').isExecuted ? 'leboncoin' : (item.json && item.json.id ? 'seloger' : 'leboncoin'), items: [item.json] };"
+      },
+      "id": "wrap-payload",
+      "name": "Envelopper payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, -50]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://TON-DOMAINE/api/pige/ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Ingest-Secret", "value": "={{ $credentials.pigeSecret }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "post-ingest",
+      "name": "Envoyer à l'API Immo-App",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, -50]
+    }
+  ],
+  "connections": {
+    "Cron Leboncoin (3x/jour)": { "main": [[{ "node": "Lancer Actor Leboncoin", "type": "main", "index": 0 }]] },
+    "Cron SeLoger (2x/jour)": { "main": [[{ "node": "Lancer Actor SeLoger", "type": "main", "index": 0 }]] },
+    "Lancer Actor Leboncoin": { "main": [[{ "node": "Attendre fin du run", "type": "main", "index": 0 }]] },
+    "Lancer Actor SeLoger": { "main": [[{ "node": "Attendre fin du run", "type": "main", "index": 0 }]] },
+    "Attendre fin du run": { "main": [[{ "node": "Statut du run", "type": "main", "index": 0 }]] },
+    "Statut du run": { "main": [[{ "node": "Run terminé ?", "type": "main", "index": 0 }]] },
+    "Run terminé ?": {
+      "main": [
+        [{ "node": "Récupérer les annonces", "type": "main", "index": 0 }],
+        [{ "node": "Attendre fin du run", "type": "main", "index": 0 }]
+      ]
+    },
+    "Récupérer les annonces": { "main": [[{ "node": "Envelopper payload", "type": "main", "index": 0 }]] },
+    "Envelopper payload": { "main": [[{ "node": "Envoyer à l'API Immo-App", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": false }
+}

@@ -9,6 +9,8 @@ import { leadsPublicRouter, leadsAdminRouter } from './routes/leads.js';
 import { likesRouter } from './routes/likes.js';
 import { settingsRouter } from './routes/settings.js';
 import { uploadsRouter } from './routes/uploads.js';
+import { pigeAdminRouter, pigeIngestRouter } from './routes/pige.js';
+import { demarrerCronPige } from './pige/cron.js';
 
 const app = express();
 
@@ -32,8 +34,12 @@ app.use('/api/admin/biens', biensAdminRouter);
 app.use('/api/admin/leads', leadsAdminRouter);
 app.use('/api/admin/settings', settingsRouter);
 app.use('/api/admin/uploads', uploadsRouter);
+app.use('/api/admin/pige', pigeAdminRouter);
+app.use('/api/pige', pigeIngestRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+demarrerCronPige();
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {

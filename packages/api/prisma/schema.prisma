@@ -17,43 +17,43 @@ model User {
 }
 
 model Bien {
-  id        Int      @id @default(autoincrement())
-  titre     String // nom de la résidence, ex "Perle du lac"
-  type      String? // Appartement, Maison, Studio...
-  prix      Float    @default(0)
-  ville     String?
+  id         Int     @id @default(autoincrement())
+  titre      String // nom de la résidence, ex "Perle du lac"
+  type       String? // Appartement, Maison, Studio...
+  prix       Float   @default(0)
+  ville      String?
   codePostal String?
-  surface   Float?
-  pieces    Int?
-  chambres  Int?
+  surface    Float?
+  pieces     Int?
+  chambres   Int?
 
   // État affiché sur la carte (Livrée, En construction...)
-  etatTexte    String?
-  etatCouleur  String? @default("#43a047")
-  etatAnim     String? @default("none") // none | blink | pulse
-  livraison    String? // texte libre, ex "Livraison T3 2026"
+  etatTexte   String?
+  etatCouleur String? @default("#43a047")
+  etatAnim    String? @default("none") // none | blink | pulse
+  livraison   String? // texte libre, ex "Livraison T3 2026"
 
-  vendu     Boolean  @default(false)
-  publie    Boolean  @default(true) // false = masqué du site public
-  luxe      Boolean  @default(false) // affiché dans la section "Luxury" (design noir)
+  vendu       Boolean @default(false)
+  publie      Boolean @default(true) // false = masqué du site public
+  luxe        Boolean @default(false) // affiché dans la section "Luxury" (design noir)
   description String? @db.Text // texte éditorial affiché sur la page Luxury
 
   // --- Diagnostics obligatoires (obligation légale France) ---
-  dpeLettre   String? // lettre A à G (performance énergie)
-  dpeValeur   Float?  // kWh/m²/an (valeur exacte)
-  gesLettre   String? // lettre A à G (émissions CO2)
-  gesValeur   Float?  // kg CO2/m²/an
-  dpeDate     DateTime? // date du diagnostic
+  dpeLettre String? // lettre A à G (performance énergie)
+  dpeValeur Float? // kWh/m²/an (valeur exacte)
+  gesLettre String? // lettre A à G (émissions CO2)
+  gesValeur Float? // kg CO2/m²/an
+  dpeDate   DateTime? // date du diagnostic
 
   // --- Charges & copropriété (mentions légales vente) ---
-  chargesAnnuelles    Float?   // €/an (art. 12 loi ALUR : moyenne sur 2 ans)
-  numCopropriete      Int?     // nombre de lots de la copropriété
-  quotePart           Float?   // quote-part du lot en % (ou millièmes)
+  chargesAnnuelles    Float? // €/an (art. 12 loi ALUR : moyenne sur 2 ans)
+  numCopropriete      Int? // nombre de lots de la copropriété
+  quotePart           Float? // quote-part du lot en % (ou millièmes)
   syndicatActif       Boolean? // procédure en cours contre le syndicat (art. 13 : oui/non)
-  syndicProcedureInfo String?  // détail de la procédure le cas échéant
-  taxeFonciere        Float?   // €/an
-  chargeType          String?  // "copropriete" | "individuel" (maison individuelle)
-  honorairesInclus    String?  // qui paie les honoraires : "vendeur" | "acquéreur"
+  syndicProcedureInfo String? // détail de la procédure le cas échéant
+  taxeFonciere        Float? // €/an
+  chargeType          String? // "copropriete" | "individuel" (maison individuelle)
+  honorairesInclus    String? // qui paie les honoraires : "vendeur" | "acquéreur"
 
   // Taux d'honoraires personnalisé ; si null, on utilise le taux général (Setting)
   tauxPerso Float?
@@ -63,24 +63,24 @@ model Bien {
   boutonUrl   String?
 
   // Visite video (YouTube, Vimeo ou MP4 direct) affichée dans le détail
-  videoUrl    String?
+  videoUrl String?
 
-  photos    Photo[]
-  plans     PlanPdf[]
+  photos      Photo[]
+  plans       PlanPdf[]
   equipements Equipement[]
-  leads     Lead[]
-  likes     Like[]
+  leads       Lead[]
+  likes       Like[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Photo {
-  id       Int    @id @default(autoincrement())
-  bienId   Int
-  bien     Bien   @relation(fields: [bienId], references: [id], onDelete: Cascade)
-  url      String // chemin relatif, ex /uploads/bien-3/photo1.jpg
-  ordre    Int    @default(0)
+  id     Int    @id @default(autoincrement())
+  bienId Int
+  bien   Bien   @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  url    String // chemin relatif, ex /uploads/bien-3/photo1.jpg
+  ordre  Int    @default(0)
 }
 
 model Equipement {
@@ -128,4 +128,112 @@ model PlanPdf {
 model Setting {
   key   String @id
   value String
+}
+
+// ===================== MODULE PIGE =====================
+// Une rechercheApify = une zone + critères, exécutée périodiquement contre
+// un actor Apify (Leboncoin / SeLoger).Seules les annonces de PARTICULIERS
+// sont conservées (filtrage seller_type = "private" / particulier).
+model PigeRecherche {
+  id          Int       @id @default(autoincrement())
+  nom         String // nom interne, ex "Saint-Julien ventes maisons"
+  source      String // "leboncoin" | "seloger"
+  active      Boolean   @default(true)
+  // Paramètres envoyés à l'actor Apify (JSON libre, spécifique par actor)
+  apifyInput  Json
+  derniereRun DateTime?
+  createdAt   DateTime  @default(now())
+
+  runs        PigeRun[]
+  PigeAnnonce PigeAnnonce[]
+
+  @@unique([nom, source])
+}
+
+// Historique d'exécution d'une recherche (pour suivi coûts / erreurs)
+model PigeRun {
+  id                Int           @id @default(autoincrement())
+  rechercheId       Int
+  recherche         PigeRecherche @relation(fields: [rechercheId], references: [id], onDelete: Cascade)
+  apifyRunId        String? // run_id Apify pour debug
+  statut            String        @default("running") // running | ok | error
+  annoncesRecues    Int           @default(0)
+  annoncesNouvelles Int           @default(0)
+  annoncesMaj       Int           @default(0)
+  erreur            String?
+  coutUsd           Float? // coût estimé du run (annonces + téléphones)
+  startedAt         DateTime      @default(now())
+  finishedAt        DateTime?
+}
+
+// Annonce immobilière de particulier collectée (dédupliquée par source+url)
+model PigeAnnonce {
+  id          Int            @id @default(autoincrement())
+  rechercheId Int?
+  recherche   PigeRecherche? @relation(fields: [rechercheId], references: [id], onDelete: SetNull)
+
+  source          String // "leboncoin" | "seloger"
+  sourceId        String? // list_id LBC ou id SeLoger
+  url             String
+  titre           String?
+  texte           String?   @db.Text
+  trans           String? // V = vente, L = location
+  typeBien        String? // Appartement, Maison, Terrain...
+  prix            Float?
+  surface         Float?
+  pieces          Int?
+  chambres        Int?
+  dpe             String? // lettre A-G
+  ges             String?
+  etage           String?
+  exterieur       String? // balcony, terrace, garden, swimming_pool...
+  meuble          Boolean?
+  cp              String?
+  ville           String?
+  dept            String?
+  latitude        Float?
+  longitude       Float? // position approximative Leboncoin (pas l'adresse exacte)
+  photoUrl        String?
+  photosJson      Json? // galerie complète
+  dateParution    DateTime?
+  // Fingerprint anti-doublon : même bien reposté sous une autre annonce
+  fingerprint     String?
+  // Suivi
+  estNouveau      Boolean   @default(true)
+  dateDernierScan DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  contact        PigeContact?
+  prixHistorique PigeHistoriquePrix[]
+
+  @@unique([source, url])
+  @@index([cp])
+  @@index([ville])
+  @@index([prix])
+  @@index([dateParution])
+}
+
+// Contact vendeur (particulier) relié à une annonce ; téléphone optionnel
+model PigeContact {
+  id        Int         @id @default(autoincrement())
+  annonceId Int         @unique
+  annonce   PigeAnnonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+  nom       String?
+  telephone String?
+  email     String?
+  // Statut téléphonie (Bloctel impossible sans abonnement Opposetel :
+  // on stocke l'info brute de la source : dispo / indispo / inconnu)
+  telStatut String? // disponible | indisponible | inconnu
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+// Historique des prix pour détecter baisses / réparutions
+model PigeHistoriquePrix {
+  id        Int         @id @default(autoincrement())
+  annonceId Int
+  annonce   PigeAnnonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+  prix      Float
+  date      DateTime    @default(now())
 }
