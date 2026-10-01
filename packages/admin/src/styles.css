@@ -230,3 +230,9 @@ button.danger { background: #e53935; }
 	.actions { flex-direction: column; }
 	.actions button, .actions a { width: 100%; }
 }
+
+/* ---- Pige ---- */
+.pige-stats { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.pige-stat { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 20px; display: flex; flex-direction: column; }
+.pige-stat b { font-size: 22px; }
+.pige-stat span { color: #6b7280; font-size: 12px; }

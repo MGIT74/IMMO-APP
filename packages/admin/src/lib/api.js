@@ -30,6 +30,8 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  get: (path, options) => request(path, options),
+  post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
   login: (email, password) =>
     fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',

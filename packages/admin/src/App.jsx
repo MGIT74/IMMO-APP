@@ -6,6 +6,7 @@ import BienForm from './pages/BienForm.jsx';
 import Leads from './pages/Leads.jsx';
 import Settings from './pages/Settings.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Pige from './pages/Pige.jsx';
 
 function ProtectedRoute({ children }) {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -58,6 +59,7 @@ function Shell({ children }) {
         <NavLink to="/" end><IconBiens /><span>Biens</span></NavLink>
         <NavLink to="/dashboard"><IconDashboard /><span>Tableau de bord</span></NavLink>
         <NavLink to="/leads"><IconDemandes /><span>Demandes</span></NavLink>
+        <NavLink to="/pige"><IconDemandes /><span>Pige</span></NavLink>
         <NavLink to="/settings"><IconReglages /><span>Réglages</span></NavLink>
         <button
           className="logout-btn"
@@ -116,6 +118,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Shell><Leads /></Shell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pige"
+          element={
+            <ProtectedRoute>
+              <Shell><Pige /></Shell>
             </ProtectedRoute>
           }
         />
