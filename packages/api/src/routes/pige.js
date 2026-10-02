@@ -157,6 +157,42 @@ pigeAdminRouter.get('/baisses-prix', async (req, res) => {
   res.json(evts);
 });
 
+// Export CSV des annonces filtrées (mêmes filtres que /annonces)
+pigeAdminRouter.get('/annonces-export', async (req, res) => {
+  const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub } = req.query;
+  const where = {
+    ...(cp ? { cp: { startsWith: String(cp).slice(0, 2) } } : {}),
+    ...(ville ? { ville: { contains: String(ville) } } : {}),
+    ...(trans ? { trans } : {}),
+    ...(typeBien ? { typeBien: { contains: String(typeBien) } } : {}),
+    ...(dpe ? { dpe: { in: String(dpe).split(',') } } : {}),
+    ...(nouveau === '1' ? { estNouveau: true } : {}),
+    ...(rechercheId ? { rechercheId: Number(rechercheId) } : {}),
+    ...(statut ? { statut: String(statut) } : {}),
+    ...(favori === '1' ? { estFavori: true } : {}),
+    ...(repub === '1' ? { nbRepubs: { gte: 1 } } : {}),
+    ...(prixMin || prixMax ? { prix: { ...(prixMin ? { gte: Number(prixMin) } : {}), ...(prixMax ? { lte: Number(prixMax) } : {}) } } : {}),
+    ...(surfMin || surfMax ? { surface: { ...(surfMin ? { gte: Number(surfMin) } : {}), ...(surfMax ? { lte: Number(surfMax) } : {}) } } : {}),
+    ...(q ? { OR: [{ titre: { contains: String(q) } }, { texte: { contains: String(q) } }, { ville: { contains: String(q) } }] } : {}),
+  };
+  const rows = await prisma.pigeAnnonce.findMany({
+    where, include: { contact: true }, orderBy: { dateParution: 'desc' }, take: 5000,
+  });
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [
+    ['id', 'source', 'titre', 'ville', 'cp', 'type', 'transaction', 'prix', 'surface', 'pieces', 'chambres', 'dpe', 'statut', 'republications', 'vendeur', 'telephone', 'parution', 'url']
+      .join(';'),
+    ...rows.map((a) => [
+      a.id, a.source, a.titre, a.ville, a.cp, a.typeBien, a.trans, a.prix, a.surface, a.pieces, a.chambres,
+      a.dpe, a.statut, a.nbRepubs, a.contact?.nom, a.contact?.telephone,
+      a.dateParution ? new Date(a.dateParution).toISOString().slice(0, 10) : '', a.url,
+    ].map(esc).join(';')),
+  ].join('\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="pige-annonces.csv"');
+  res.send('\uFEFF' + csv);
+});
+
 /* ---------- Suivi CRM ---------- */
 
 const STATUTS = ['nouveau', 'a_contacter', 'contacte', 'interesse', 'negocie', 'archive'];

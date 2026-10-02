@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api.js';
 
 const STATUTS = [
-  { key: 'nouveau', label: 'Nouveau', color: '#3b82f6' },
+  { key: 'nouveau', label: 'Nouveau', color: '#6366f1' },
   { key: 'a_contacter', label: 'À contacter', color: '#f59e0b' },
   { key: 'contacte', label: 'Contacté', color: '#8b5cf6' },
   { key: 'interesse', label: 'Intéressé', color: '#10b981' },
@@ -11,70 +11,116 @@ const STATUTS = [
 ];
 const statutInfo = (k) => STATUTS.find((s) => s.key === k) || STATUTS[0];
 
-function fmtEur(n) {
-  return n != null ? Number(n).toLocaleString('fr-FR') + ' €' : '—';
+const fmtEur = (n) => (n != null ? Number(n).toLocaleString('fr-FR').replace(/,/g, ' ') + ' €' : '—');
+const fmtNum = (n) => (n != null ? Number(n).toLocaleString('fr-FR').replace(/,/g, ' ') : '—');
+
+/* ---------- Jauge circulaire (score d'opportunité) ---------- */
+function Jauge({ value, size = 64 }) {
+  const r = (size - 10) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, value));
+  const color = pct >= 70 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#9ca3af';
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef1f6" strokeWidth="6" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="6"
+        strokeDasharray={`${(pct / 100) * c} ${c}`} strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      <text x="50%" y="52%" textAnchor="middle" dominantBaseline="middle" fontSize="15" fontWeight="700" fill={color}>
+        {Math.round(pct)}%
+      </text>
+    </svg>
+  );
 }
 
-/* ---------- Graphique d'évolution des prix (SVG pur, sans lib) ---------- */
+/* ---------- Sparkline prix (style Dribbble : mini courbe + badge variation) ---------- */
+function SparkPrix({ points, h = 44 }) {
+  if (!points || points.length < 2) return <span className="spark-flat">— stable</span>;
+  const W = 110;
+  const vals = points.map((p) => p.prix);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = Math.max(max - min, max * 0.02, 1);
+  const x = (i) => (i * W) / (points.length - 1);
+  const y = (v) => 4 + (1 - (v - min) / span) * (h - 8);
+  const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.prix).toFixed(1)}`).join(' ');
+  const area = `${d} L${x(points.length - 1).toFixed(1)},${h} L0,${h} Z`;
+  const last = points[points.length - 1].prix, first = points[0].prix;
+  const diff = ((last - first) / first) * 100;
+  const down = last < first;
+  return (
+    <div className="spark-wrap">
+      <div className="spark-badge" style={down ? { background: '#e8f7ef', color: '#0e9f6e' } : { background: '#fdeeec', color: '#e02d3c' }}>
+        {down ? '↓' : '↑'} {Math.abs(diff).toFixed(1)}%
+      </div>
+      <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`}>
+        <defs>
+          <linearGradient id={`sg${points.length}${Math.round(first)}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={down ? '#14ca8c' : '#ff6b7a'} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={down ? '#14ca8c' : '#ff6b7a'} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#sg${points.length}${Math.round(first)})`} />
+        <path d={d} fill="none" stroke={down ? '#14ca8c' : '#ff6b7a'} strokeWidth="1.8" strokeLinejoin="round" />
+        <circle cx={x(points.length - 1)} cy={y(last)} r="2.6" fill="#fff" stroke={down ? '#14ca8c' : '#ff6b7a'} strokeWidth="1.6" />
+      </svg>
+    </div>
+  );
+}
+
+/* ---------- Graphe détaillé du drawer ---------- */
 function GraphePrix({ historique, prixInitial }) {
   const points = [
-    ...(prixInitial && historique.length && historique[0].prix !== prixInitial
-      ? [{ prix: prixInitial, date: null }]
-      : []),
+    ...(prixInitial != null && (!historique.length || historique[0].prix !== prixInitial)
+      ? [{ prix: prixInitial, date: null }] : []),
     ...historique.map((h) => ({ prix: h.prix, date: h.date })),
   ];
   if (points.length < 2) {
     return (
       <div className="graphe-vide">
-        <p style={{ color: 'var(--muted, #888)', fontSize: 13, margin: 0 }}>
-          {points.length === 1 ? 'Un seul relevé de prix pour le moment — le graphe apparaîtra au prochain changement de prix.' : 'Pas encore de relevé de prix.'}
-        </p>
+        Prix initial : <b>{fmtEur(prixInitial || historique[0]?.prix)}</b> — le graphe apparaîtra au premier changement de prix.
       </div>
     );
   }
-  const W = 560, H = 160, P = { l: 56, r: 12, t: 12, b: 22 };
-  const prixMin = Math.min(...points.map((p) => p.prix));
-  const prixMax = Math.max(...points.map((p) => p.prix));
+  const W = 560, H = 170, P = { l: 56, r: 14, t: 14, b: 24 };
+  const vals = points.map((p) => p.prix);
+  const prixMin = Math.min(...vals), prixMax = Math.max(...vals);
   const span = Math.max(prixMax - prixMin, prixMax * 0.02, 1);
-  const yMin = prixMin - span * 0.08;
-  const yMax = prixMax + span * 0.08;
+  const yMin = prixMin - span * 0.1, yMax = prixMax + span * 0.1;
   const x = (i) => P.l + (i * (W - P.l - P.r)) / (points.length - 1);
   const y = (v) => P.t + (1 - (v - yMin) / (yMax - yMin)) * (H - P.t - P.b);
   const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.prix).toFixed(1)}`).join(' ');
-  const area = `${path} L${x(points.length - 1).toFixed(1)},${H - P.b} L${x(0).toFixed(1)},${H - P.b} Z`;
-  const baisse = points[points.length - 1].prix < points[0].prix;
+  const area = `${path} L${x(points.length - 1)},${H - P.b} L${x(0)},${H - P.b} Z`;
+  const baisse = vals[vals.length - 1] < vals[0];
   const couleur = baisse ? '#10b981' : '#ef4444';
+  const diff = ((vals[vals.length - 1] - vals[0]) / vals[0]) * 100;
   return (
     <div className="graphe-prix">
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }}>
         <defs>
           <linearGradient id="gpGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={couleur} stopOpacity="0.18" />
+            <stop offset="0%" stopColor={couleur} stopOpacity="0.2" />
             <stop offset="100%" stopColor={couleur} stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0, 0.5, 1].map((f) => (
           <line key={f} x1={P.l} x2={W - P.r} y1={P.t + f * (H - P.t - P.b)} y2={P.t + f * (H - P.t - P.b)}
-            stroke="#e5e7eb" strokeDasharray="3,3" />
+            stroke="#ebeef3" strokeDasharray="4,4" />
         ))}
-        <text x={4} y={y(yMax) + 4} fontSize="10" fill="#9ca3af">{(yMax / 1000).toFixed(0)}k</text>
-        <text x={4} y={y(yMin) + 4} fontSize="10" fill="#9ca3af">{(yMin / 1000).toFixed(0)}k</text>
+        <text x={6} y={y(yMax) + 4} fontSize="10" fill="#9aa3b2">{(yMax / 1000).toFixed(0)}k €</text>
+        <text x={6} y={y(yMin) + 4} fontSize="10" fill="#9aa3b2">{(yMin / 1000).toFixed(0)}k €</text>
         <path d={area} fill="url(#gpGrad)" />
-        <path d={path} fill="none" stroke={couleur} strokeWidth="2" strokeLinejoin="round" />
+        <path d={path} fill="none" stroke={couleur} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => (
           <g key={i}>
-            <circle cx={x(i)} cy={y(p.prix)} r="3.2" fill="#fff" stroke={couleur} strokeWidth="2" />
-            <title>{`${fmtEur(p.prix)}${p.date ? ' · ' + new Date(p.date).toLocaleDateString('fr-FR') : ' (initial)'}`}</title>
+            <circle cx={x(i)} cy={y(p.prix)} r="3.4" fill="#fff" stroke={couleur} strokeWidth="2" />
+            <title>{`${fmtEur(p.prix)}${p.date ? ' · ' + new Date(p.date).toLocaleDateString('fr-FR') : ' (référence)'}`}</title>
           </g>
         ))}
-        <text x={x(0)} y={H - 6} fontSize="10" fill="#9ca3af">début</text>
-        <text x={W - P.r} y={H - 6} fontSize="10" fill="#9ca3af" textAnchor="end">maintenant</text>
       </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 2 }}>
-        <span>Prix initial : <b>{fmtEur(points[0].prix)}</b></span>
+      <div className="graphe-foot">
+        <span>Référence : <b>{fmtEur(vals[0])}</b></span>
         <span style={{ color: couleur, fontWeight: 700 }}>
-          {baisse ? '▼' : '▲'} {fmtEur(Math.abs(points[points.length - 1].prix - points[0].prix))}
-          {' '}({(((points[points.length - 1].prix - points[0].prix) / points[0].prix) * 100).toFixed(1)} %)
+          {baisse ? '▼' : '▲'} {Math.abs(diff).toFixed(1)} % · {fmtEur(Math.abs(vals[vals.length - 1] - vals[0]))}
         </span>
       </div>
     </div>
@@ -92,7 +138,103 @@ const TYPE_EVT_LABEL = {
   statut: ['🔄', 'Statut'],
 };
 
-/* ---------- Drawer détail annonce ---------- */
+/* ---------- Score d'opportunité (0-100) ---------- */
+function scoreOpportunite(a) {
+  let s = 30;
+  if (a.prixHistorique?.some?.((h) => true) && a.prix != null && a.prixInitial != null && a.prix < a.prixInitial) s += 25; // baisse de prix
+  if (a.nbRepubs > 0) s += Math.min(a.nbRepubs * 10, 20); // republié = vendeur motivated
+  if (a.contact?.telephone) s += 25; // callable now
+  if (a.prixParM2 && a.avgPrixM2Ville && a.prixParM2 < a.avgPrixM2Ville * 0.92) s += 10; // sous la moyenne ville
+  if (a.estFavori) s += 5;
+  return Math.min(100, s);
+}
+
+/* ---------- Carte annonce (style Dribbble) ---------- */
+function CarteAnnonce({ a, onOpen, onStatut, onFavori }) {
+  const info = statutInfo(a.statut);
+  const score = scoreOpportunite(a);
+  const hist = a._hist || [];
+  const points = a.prixInitial && (!hist.length || hist[0].prix !== a.prixInitial)
+    ? [{ prix: a.prixInitial }, ...hist] : hist;
+  const jourDepuisScan = a.dateDernierScan ? Math.floor((Date.now() - new Date(a.dateDernierScan)) / 864e5) : null;
+
+  return (
+    <div className="annonce-card" onClick={() => onOpen(a.id)}>
+      {a.estFavori && <span className="ribbon ribbon-fav">★</span>}
+      <span className={'ribbon ' + (a.estNouveau ? 'ribbon-new' : 'ribbon-publi')}
+        style={a.estNouveau ? { background: '#6366f1' } : info.color !== '#9ca3af' ? { background: info.color, opacity: .85 } : { background: '#cbd5e1' }}>
+        {a.estNouveau ? 'Nouveau' : info.label}
+      </span>
+      <div className="annonce-photo">
+        {a.photoUrl ? <img src={a.photoUrl} alt="" loading="lazy" /> : <div className="no-photo">🏠</div>}
+        {a.photosJson?.length > 1 && <span className="photo-nb">📷 {a.photosJson.length}</span>}
+      </div>
+
+      <div className="annonce-main">
+        <div className="annonce-head">
+          <span className="annonce-id">{a.sourceId || a.id}</span>
+          {a.nbRepubs > 0 && <span className="mini-badge repub" title="Republiée plusieurs fois">🔁 {a.nbRepubs}</span>}
+          {a.dpe && <span className="mini-badge dpe">{a.dpe}</span>}
+          {a.meuble && <span className="mini-badge">Meublé</span>}
+        </div>
+        <div className="annonce-titre" title={a.titre}>{a.titre || a.typeBien || 'Annonce'}</div>
+        <div className="annonce-adresse">
+          {a.ville} {a.cp && `· ${a.cp}`}
+        </div>
+        <div className="annonce-prix">{fmtEur(a.prix)}
+          {a.surface ? <span className="m2">{Math.round(a.prix / a.surface).toLocaleString('fr-FR')} €/m²</span> : null}
+        </div>
+        <div className="annonce-meta">
+          {a.surface && <span>▦ {a.surface} m²</span>}
+          {a.pieces && <span>⌂ {a.pieces} p.</span>}
+          {a.chambres && <span>🛏 {a.chambres}</span>}
+          {a.typeBien && <span className="type-chip">{a.typeBien}</span>}
+        </div>
+        {points.length >= 2 ? (
+          <SparkPrix points={points} />
+        ) : (
+          <div className="annonce-scan muted">
+            Collectée le {new Date(a.createdAt).toLocaleDateString('fr-FR')}
+            {jourDepuisScan === 0 ? ' · aujourd’hui' : jourDepuisScan != null ? ` · vue il y a ${jourDepuisScan}j` : ''}
+          </div>
+        )}
+      </div>
+
+      <div className="annonce-side">
+        <div className="annonce-statuts">
+          <span className="pt" style={{ color: info.color }}>● {info.label}</span>
+          {a.contact?.telephone && <span style={{ color: '#10b981' }}>● Tél dispo</span>}
+          {a.prixInitial != null && a.prix < a.prixInitial && <span style={{ color: '#10b981' }}>● Baisse prix</span>}
+        </div>
+        <div className="annonce-contact">
+          {a.contact?.telephone ? (
+            <a href={`tel:${a.contact.telephone}`} onClick={(e) => e.stopPropagation()}><b>{a.contact.telephone}</b></a>
+          ) : <span className="muted">{a.contact?.telStatut === 'non_revele' ? 'Tél non révélé (retry auto)' : 'Tél indisponible'}</span>}
+          {a.contact?.nom && <div className="muted" style={{ fontSize: 12 }}>{a.contact.nom}</div>}
+        </div>
+        <Jauge value={score} />
+        <div className="annonce-actions" onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => onFavori(a)} className={a.estFavori ? 'btn-mini on' : 'btn-mini'}>{a.estFavori ? '★' : '☆'}</button>
+          <button onClick={() => onOpen(a.id)} className="btn-mini">Détail</button>
+          <a href={a.url} target="_blank" rel="noreferrer" className="btn-mini">↗</a>
+        </div>
+      </div>
+
+      <div className="annonce-foot">
+        <span>Créée : {new Date(a.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+        <span>Vu : {a.dateDernierScan ? new Date(a.dateDernierScan).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+        <span className="foot-right">
+          {a.parutionJours != null && <>{a.parutionJours}j en ligne ·</>}
+          <span className="stat-inline">{a.contact?.telephone ? '📞 OK' : '📵 —'}</span>
+          <span className="stat-inline">🔁 {a.nbRepubs || 0}</span>
+          <span className="stat-inline">📉 {a.prixHistorique?.length || 0}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Drawer détail ---------- */
 function DetailAnnonce({ annonceId, onClose, onChanged }) {
   const [a, setA] = useState(null);
   const [note, setNote] = useState('');
@@ -105,14 +247,15 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
     });
   }, [annonceId]);
 
-  if (!a) return <div className="drawer">Chargement…</div>;
+  if (!a) return <div className="drawer"><div className="drawer-panel">Chargement…</div></div>;
 
   const info = statutInfo(a.statut);
 
-  async function majStatut(statut) {
+  async function patchStatut(payload) {
     setBusy(true);
-    const d = await api.patch(`/api/admin/pige/annonces/${annonceId}/statut`, { statut });
-    setA({ ...a, ...d });
+    const d = await api.patch(`/api/admin/pige/annonces/${a.id}/statut`, payload);
+    const refresh = await api.get(`/api/admin/pige/annonces/${a.id}`);
+    setA(refresh);
     setBusy(false);
     onChanged?.();
   }
@@ -120,26 +263,18 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
   async function saveNote() {
     if (!note.trim()) return;
     setBusy(true);
-    await api.patch(`/api/admin/pige/annonces/${annonceId}/statut`, { noteMemo: note });
-    await api.post(`/api/admin/pige/annonces/${annonceId}/evenements`, { type: 'note', detail: note });
-    const d = await api.get(`/api/admin/pige/annonces/${annonceId}`);
-    setA(d);
+    await api.patch(`/api/admin/pige/annonces/${a.id}/statut`, { noteMemo: note });
+    await api.post(`/api/admin/pige/annonces/${a.id}/evenements`, { type: 'note', detail: note });
+    setA(await api.get(`/api/admin/pige/annonces/${a.id}`));
     setBusy(false);
     onChanged?.();
   }
 
   async function journaliserAppel() {
     setBusy(true);
-    await api.post(`/api/admin/pige/annonces/${annonceId}/evenements`, { type: 'appel', detail: note || 'Appel téléphonique' });
-    const d = await api.get(`/api/admin/pige/annonces/${annonceId}`);
-    setA(d);
+    await api.post(`/api/admin/pige/annonces/${a.id}/evenements`, { type: 'appel', detail: note || 'Appel téléphonique' });
+    setA(await api.get(`/api/admin/pige/annonces/${a.id}`));
     setBusy(false);
-    onChanged?.();
-  }
-
-  async function toggleFavori() {
-    const d = await api.patch(`/api/admin/pige/annonces/${annonceId}/statut`, { estFavori: !a.estFavori });
-    setA({ ...a, ...d });
     onChanged?.();
   }
 
@@ -147,64 +282,80 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
     <div className="drawer" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="drawer-panel">
         <button className="drawer-close" onClick={onClose}>✕</button>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-          {a.photoUrl && <img src={a.photoUrl} alt="" style={{ width: 128, height: 96, objectFit: 'cover', borderRadius: 8 }} />}
-          <div>
-            <h3 style={{ margin: '0 0 4px' }}>{a.titre || a.typeBien || 'Annonce'}</h3>
-            <div className="muted" style={{ fontSize: 13 }}>
-              {a.ville} {a.cp} · {a.trans === 'L' ? 'Location' : 'Vente'} · {a.typeBien || '—'}
-              <br />{a.surface ? `${a.surface} m²` : '—'} · {a.pieces || '—'} pièces {a.chambres ? `· ${a.chambres} ch.` : ''}
-            </div>
-            <div style={{ marginTop: 6 }}>
-              <b style={{ fontSize: 18 }}>{fmtEur(a.prix)}</b>
+
+        <div className="detail-head">
+          {a.photoUrl && <img src={a.photoUrl} alt="" />}
+          <div className="detail-head-info">
+            <div className="detail-id">{a.sourceId || a.id} · {a.source}</div>
+            <h3>{a.titre || a.typeBien || 'Annonce'}</h3>
+            <div className="muted">{a.ville} {a.cp} · {a.trans === 'L' ? 'Location' : 'Vente'} · {a.typeBien || '—'}</div>
+            <div className="detail-prix">
+              <b>{fmtEur(a.prix)}</b>
+              {a.surface ? <span>{Math.round(a.prix / a.surface).toLocaleString('fr-FR')} €/m²</span> : null}
               {a.prixInitial != null && a.prix != null && a.prix !== a.prixInitial && (
-                <span style={{ marginLeft: 8, color: a.prix < a.prixInitial ? '#10b981' : '#ef4444', fontWeight: 700, fontSize: 13 }}>
-                  {a.prix < a.prixInitial ? '▼' : '▲'} vs initial {fmtEur(a.prixInitial)}
+                <span style={{ color: a.prix < a.prixInitial ? '#10b981' : '#ef4444' }}>
+                  {a.prix < a.prixInitial ? '▼' : '▲'} vs {fmtEur(a.prixInitial)}
                 </span>
               )}
             </div>
-            {a.nbRepubs > 0 && <span className="badge-repub">🔁 Republiée {a.nbRepubs}x</span>}
           </div>
+          <Jauge value={scoreOpportunite(a)} size={76} />
         </div>
 
-        {/* Statut + favori */}
-        <div className="pige-crm-row">
-          <select value={a.statut} disabled={busy} onChange={(e) => majStatut(e.target.value)}>
+        <div className="detail-chips">
+          <select value={a.statut} disabled={busy} onChange={(e) => patchStatut({ statut: e.target.value })}>
             {STATUTS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
           </select>
-          <button className={a.estFavori ? 'btn-favori-on' : ''} onClick={toggleFavori}>{a.estFavori ? '★ Favori' : '☆ Favori'}</button>
-        </div>
-        <span className="badge-statut" style={{ background: info.color + '22', color: info.color }}>{info.label}</span>
-
-        {/* Contact */}
-        <div className="card" style={{ margin: '12px 0', padding: 10 }}>
-          <h4 style={{ margin: '0 0 6px' }}>Vendeur</h4>
-          {a.contact?.telephone ? (
-            <a href={`tel:${a.contact.telephone}`} style={{ fontWeight: 700, fontSize: 15 }}>{a.contact.telephone}</a>
-          ) : <em style={{ color: '#999' }}>Téléphone non disponible</em>}
-          {a.contact?.nom && <div className="muted" style={{ fontSize: 13 }}>{a.contact.nom}</div>}
+          <button className={a.estFavori ? 'btn-mini on' : 'btn-mini'} onClick={() => patchStatut({ estFavori: !a.estFavori })}>
+            {a.estFavori ? '★ Favori' : '☆ Favori'}
+          </button>
+          <span className="badge-repub">🔁 Republications : {a.nbRepubs}</span>
+          {a.dpe && <span className="mini-badge dpe">DPE {a.dpe}</span>}
         </div>
 
-        {/* Graphique prix */}
-        <div className="card" style={{ padding: 10, marginBottom: 12 }}>
-          <h4 style={{ margin: '0 0 6px' }}>Évolution du prix</h4>
-          <GraphePrix historique={a.prixHistorique} prixInitial={a.prixInitial} />
-        </div>
-
-        {/* Mémo */}
-        <div style={{ marginBottom: 12 }}>
-          <h4 style={{ margin: '0 0 6px' }}>Mémo</h4>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
-            placeholder="Ex : a appelé le 5/10, rappeler le 12 — veut vendre vite…" style={{ width: '100%' }} />
-          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <button disabled={busy} onClick={saveNote}>💾 Enregistrer la note</button>
-            <button disabled={busy} onClick={journaliserAppel}>☎️ Journaliser un appel</button>
+        <div className="detail-cols">
+          <div className="card-sec">
+            <h4>Vendeur</h4>
+            {a.contact?.telephone ? (
+              <a href={`tel:${a.contact.telephone}`} className="tel-big">{a.contact.telephone}</a>
+            ) : <em className="muted">Non disponible{a.contact?.telStatut === 'non_revele' ? ' (retry au prochain scan)' : ''}</em>}
+            {a.contact?.nom && <div className="muted" style={{ fontSize: 13 }}>{a.contact.nom}</div>}
+          </div>
+          <div className="card-sec">
+            <h4>Descriptif</h4>
+            <div className="detail-specs">
+              <div><span>Surface</span><b>{a.surface ? a.surface + ' m²' : '—'}</b></div>
+              <div><span>Pièces</span><b>{a.pieces || '—'}</b></div>
+              <div><span>Chambres</span><b>{a.chambres || '—'}</b></div>
+              <div><span>Étage</span><b>{a.etage || '—'}</b></div>
+              <div><span>DPE / GES</span><b>{a.dpe || '—'} / {a.ges || '—'}</b></div>
+              <div><span>Parution</span><b>{a.dateParution ? new Date(a.dateParution).toLocaleDateString('fr-FR') : '—'}</b></div>
+            </div>
           </div>
         </div>
 
-        {/* Journal */}
-        <div>
-          <h4 style={{ margin: '0 0 6px' }}>Journal ({a.evenements.length})</h4>
+        <div className="card-sec" style={{ margin: '14px 0' }}>
+          <h4>Évolution du prix</h4>
+          <GraphePrix historique={a.prixHistorique || []} prixInitial={a.prixInitial} />
+        </div>
+
+        <div className="card-sec" style={{ marginBottom: 14 }}>
+          <h4>Mémo commercial</h4>
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+            placeholder="Ex : appelé le 5/10, rappeler le 12 — vendeur pressé, discutable à -5%…" />
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <button className="btn-mini" disabled={busy} onClick={saveNote}>💾 Enregistrer la note</button>
+            <button className="btn-mini" disabled={busy} onClick={journaliserAppel}>☎️ Journaliser un appel</button>
+            {a.contact?.telephone && (
+              <button className="btn-mini" disabled={busy} onClick={() => patchStatut({ statut: 'contacte' })}>
+                ✅ Marquer contacté
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="card-sec">
+          <h4>Journal ({a.evenements.length})</h4>
           <div className="pige-journal">
             {a.evenements.map((e) => (
               <div key={e.id} className="pige-journal-row">
@@ -236,7 +387,8 @@ export default function Pige() {
   const [loading, setLoading] = useState(true);
   const [busyRun, setBusyRun] = useState(null);
   const [detailId, setDetailId] = useState(null);
-  const [filtres, setFiltres] = useState({ q: '', cp: '', prixMax: '', surfMin: '', trans: '', statut: '', avecTel: false, repub: false, favori: false });
+  const [tri, setTri] = useState('dateParution');
+  const [filtres, setFiltres] = useState({ q: '', cp: '', prixMax: '', surfMin: '', trans: '', statut: '', avecTel: false, repub: false });
   const [nouvelleRech, setNouvelleRech] = useState({ nom: '', location: 'Saint-Julien-en-Genevois 74160', adLimit: 100 });
 
   async function load() {
@@ -250,8 +402,11 @@ export default function Pige() {
     if (filtres.statut) params.set('statut', filtres.statut);
     if (filtres.avecTel) params.set('avecTel', '1');
     if (filtres.repub) params.set('repub', '1');
-    const data = await api.get(`/api/admin/pige/annonces?${params.toString()}&perPage=50`);
-    setAnnonces((data && data.annonces) || []);
+    params.set('perPage', '50');
+    const data = await api.get(`/api/admin/pige/annonces?${params.toString()}`);
+    let list = (data && data.annonces) || [];
+    // Tri local (+ histo inclus via détail ? non : light → histo absent des listes)
+    setAnnonces(list);
     const [r, s, runsData] = await Promise.all([
       api.get('/api/admin/pige/recherches'),
       api.get('/api/admin/pige/stats'),
@@ -264,6 +419,19 @@ export default function Pige() {
   }
 
   useEffect(() => { load(); }, []);
+
+  const listeTriee = useMemo(() => {
+    const arr = [...annonces];
+    const cmp = {
+      prix: (a, b) => (a.prix || 0) - (b.prix || 0),
+      prixDesc: (a, b) => (b.prix || 0) - (a.prix || 0),
+      surface: (a, b) => (b.surface || 0) - (a.surface || 0),
+      repub: (a, b) => (b.nbRepubs || 0) - (a.nbRepubs || 0),
+      dateParution: (a, b) => new Date(b.dateParution || 0) - new Date(a.dateParution || 0),
+      createdAt: (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    }[tri];
+    return cmp ? arr.sort(cmp) : arr;
+  }, [annonces, tri]);
 
   async function lancerRecherche(id) {
     setBusyRun(id);
@@ -294,41 +462,92 @@ export default function Pige() {
     load();
   }
 
-  async function majStatutRapide(id, statut) {
-    await api.patch(`/api/admin/pige/annonces/${id}/statut`, { statut });
-    load();
+  async function toggleFavori(a) {
+    const d = await api.patch(`/api/admin/pige/annonces/${a.id}/statut`, { estFavori: !a.estFavori });
+    setAnnonces(annonces.map((x) => (x.id === a.id ? { ...x, estFavori: d.estFavori } : x)));
   }
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Pige — annonces particuliers (CRM)</h1>
+      <div className="page-header pige-header">
+        <h1>Propriétés surveillées</h1>
+        <div className="pige-header-actions">
+          <input className="pige-search" placeholder="Rechercher par ville, titre…" value={filtres.q}
+            onChange={(e) => setFiltres({ ...filtres, q: e.target.value })}
+            onKeyDown={(e) => e.key === 'Enter' && load()} />
+          <button className="btn-light" onClick={load}>⌕Filtrer</button>
+          <button className="btn-light" onClick={() => window.open('/api/admin/pige/annonces-export?' + new URLSearchParams(
+            Object.entries({ ...filtres }).filter(([k, v]) => v && k !== 'avecTel').map(([k, v]) => [k, v === false ? '' : v])
+          ).toString(), '_blank')}>⬇ Export CSV</button>
+          <button className="btn-primary-c" onClick={load}>＋ Actualiser</button>
+        </div>
       </div>
 
+      {/* Top stats style Dribbble : 3 cartes avec mini-barres */}
       {stats && (
-        <div className="pige-stats">
-          <div className="pige-stat"><b>{stats.totalAnnonces}</b><span>annonces</span></div>
-          <div className="pige-stat"><b>{stats.avecTelephone}</b><span>avec téléphone</span></div>
-          <div className="pige-stat"><b>{stats.nouveaux7j}</b><span>nouvelles (7j)</span></div>
-          <div className="pige-stat"><b>{stats.republicees}</b><span>republiées</span></div>
-          <div className="pige-stat"><b>{stats.baisses7j}</b><span>baisses prix 7j</span></div>
-          <div className="pige-stat"><b>${Number(stats.coutTotalUsd).toFixed(2)}</b><span>coût Apify</span></div>
+        <div className="stat-cards pige-top">
+          <div className="stat-card top-card">
+            <div className="top-card-head"><span>Annonces suivies</span><b>{stats.totalAnnonces}</b></div>
+            <div className="top-card-body">
+              <MiniBarres data={[
+                { label: 'Favoris', v: stats.parStatut ? Object.values(stats.parStatut).reduce((s, x) => s + x, 0) : 0, color: '#6366f1' },
+                { label: 'Avec tél.', v: stats.avecTelephone, color: '#10b981' },
+                { label: 'Republiées', v: stats.republicees, color: '#f59e0b' },
+              ]} />
+              <div className="top-list">
+                {STATUTS.map((st) => (
+                  <div key={st.key} className="top-list-row" style={{ cursor: 'pointer' }}
+                    onClick={() => setFiltres({ ...filtres, statut: filtres.statut === st.key ? '' : st.key })}>
+                    <span className="dot" style={{ background: st.color }}></span>
+                    {st.label} <b style={{ marginLeft: 'auto' }}>{stats.parStatut?.[st.key] || 0}</b>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="stat-card top-card">
+            <div className="top-card-head"><span>Opportunités</span><b>{(stats.baisses7j || 0) + (stats.republicees || 0)}</b></div>
+            <div className="top-card-body">
+              <MiniBarres data={[
+                { label: 'Baisses prix (7j)', v: stats.baisses7j || 0, color: '#10b981' },
+                { label: 'Republiées', v: stats.republicees || 0, color: '#f59e0b' },
+                { label: 'Nouvelles (7j)', v: stats.nouveaux7j || 0, color: '#6366f1' },
+              ]} />
+              <div className="top-list">
+                <div className="top-list-row"><span className="dot" style={{ background: '#10b981' }}></span>Baisse de prix 7j <b style={{ marginLeft: 'auto' }}>{stats.baisses7j || 0}</b></div>
+                <div className="top-list-row"><span className="dot" style={{ background: '#f59e0b' }}></span>Annonces republiées <b style={{ marginLeft: 'auto' }}>{stats.republicees || 0}</b></div>
+                <div className="top-list-row"><span className="dot" style={{ background: '#6366f1' }}></span>Nouvelles 7j <b style={{ marginLeft: 'auto' }}>{stats.nouveaux7j || 0}</b></div>
+              </div>
+            </div>
+          </div>
+          <div className="stat-card top-card">
+            <div className="top-card-head"><span>Téléphones & coûts</span><b>{stats.avecTelephone}</b></div>
+            <div className="top-card-body">
+              <MiniBarres data={[
+                { label: 'Téléphones', v: stats.avecTelephone, color: '#10b981' },
+                { label: 'Sans tél', v: (stats.totalAnnonces || 0) - (stats.avecTelephone || 0), color: '#e5e7eb' },
+                { label: 'Runs', v: (runs && runs.length) || 0, color: '#8b5cf6' },
+              ]} />
+              <div className="top-list">
+                <div className="top-list-row"><span className="dot" style={{ background: '#10b981' }}></span>Avec téléphone <b style={{ marginLeft: 'auto' }}>{stats.avecTelephone}</b></div>
+                <div className="top-list-row"><span className="dot" style={{ background: '#9aa3b2' }}></span>Coût Apify <b style={{ marginLeft: 'auto' }}>${Number(stats.coutTotalUsd).toFixed(2)}</b></div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Pipeline par statut */}
+      {/* Pipeline cliquable */}
       {stats?.parStatut && (
         <div className="pige-pipeline">
           {STATUTS.map((s) => (
             <button key={s.key} className={'pige-pipe-btn' + (filtres.statut === s.key ? ' active' : '')}
-              onClick={() => { setFiltres({ ...filtres, statut: filtres.statut === s.key ? '' : s.key }); setTimeout(load, 0); }}
-              style={{ borderColor: stats.parStatut[s.key] ? s.color : undefined }}>
+              onClick={() => setFiltres({ ...filtres, statut: filtres.statut === s.key ? '' : s.key })}
+              style={{ borderColor: filtres.statut === s.key ? s.color : undefined }}>
               <span className="dot" style={{ background: s.color }}></span>
-              {s.label}
-              <b>{stats.parStatut[s.key] || 0}</b>
+              {s.label} <b>{stats.parStatut[s.key] || 0}</b>
             </button>
           ))}
-          {filtres.statut && <button className="pige-pipe-btn clear" onClick={() => { setFiltres({ ...filtres, statut: '' }); setTimeout(load, 0); }}>✕ Tout</button>}
         </div>
       )}
 
@@ -368,74 +587,39 @@ export default function Pige() {
       </div>
 
       <div className="card" style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input placeholder="Recherche (titre/ville)" value={filtres.q}
-          onChange={(e) => setFiltres({ ...filtres, q: e.target.value })} style={{ flex: '1 1 180px' }} />
-        <input placeholder="CP (ex 74)" value={filtres.cp} size="6"
-          onChange={(e) => setFiltres({ ...filtres, cp: e.target.value })} />
-        <input placeholder="Prix max" type="number" value={filtres.prixMax} size="9"
-          onChange={(e) => setFiltres({ ...filtres, prixMax: e.target.value })} />
-        <input placeholder="Surface min" type="number" value={filtres.surfMin} size="7"
-          onChange={(e) => setFiltres({ ...filtres, surfMin: e.target.value })} />
+        <input placeholder="CP (ex 74)" value={filtres.cp} size="6" onChange={(e) => setFiltres({ ...filtres, cp: e.target.value })} />
+        <input placeholder="Prix max" type="number" value={filtres.prixMax} size="9" onChange={(e) => setFiltres({ ...filtres, prixMax: e.target.value })} />
+        <input placeholder="Surface min" type="number" value={filtres.surfMin} size="7" onChange={(e) => setFiltres({ ...filtres, surfMin: e.target.value })} />
         <select value={filtres.trans} onChange={(e) => setFiltres({ ...filtres, trans: e.target.value })}>
           <option value="">Vente & Location</option>
           <option value="V">Vente</option>
           <option value="L">Location</option>
         </select>
+        <select value={tri} onChange={(e) => setTri(e.target.value)}>
+          <option value="createdAt">Plus récentes collectées</option>
+          <option value="dateParution">Plus récentes publiées</option>
+          <option value="prix">Prix croissant</option>
+          <option value="prixDesc">Prix décroissant</option>
+          <option value="surface">Plus grandes surfaces</option>
+          <option value="repub">Plus republicées</option>
+        </select>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.avecTel} onChange={(e) => setFiltres({ ...filtres, avecTel: e.target.checked })} /> Avec tél.</label>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.repub} onChange={(e) => setFiltres({ ...filtres, repub: e.target.checked })} /> Republiées</label>
-        <button onClick={load}>Filtrer</button>
+        <button onClick={load}>Appliquer</button>
       </div>
 
       {loading ? (
         <p>Chargement…</p>
-      ) : annonces.length === 0 ? (
+      ) : listeTriee.length === 0 ? (
         <div className="card">
           <p>Aucune annonce pour ces critères.</p>
-          <p style={{ color: 'var(--muted, #888)' }}>
-            Vérifie qu'une recherche existe ci-dessus et lance-la une fois (ou attends le cron n8n 3x/jour).
-          </p>
+          <p style={{ color: 'var(--muted, #888)' }}>Lance une recherche ou attends le cron n8n 3x/jour.</p>
         </div>
       ) : (
-        <div className="card">
-          <table className="table">
-            <thead>
-              <tr><th></th><th>Bien</th><th>Prix</th><th>Surface</th><th>Statut</th><th>Contact</th><th>Publié le</th><th>Lien</th></tr>
-            </thead>
-            <tbody>
-              {annonces.map((a) => {
-                const info = statutInfo(a.statut);
-                return (
-                  <tr key={a.id} style={{ cursor: 'pointer' }} onClick={() => setDetailId(a.id)}>
-                    <td>{a.photoUrl ? <img src={a.photoUrl} alt="" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6 }} /> : ''}</td>
-                    <td>
-                      <b>{a.estFavori ? '★ ' : ''}{a.titre || a.typeBien || 'Annonce'}</b>
-                      {a.nbRepubs > 0 && <span className="badge-repub" title="Annonce republicée">🔁 {a.nbRepubs}</span>}
-                      {a.prixHistorique?.length > 0 && <span className="badge-prix" title="Le prix a changé">📉</span>}
-                      <br />
-                      <small>{a.ville} {a.cp} · {a.trans === 'L' ? 'Location' : 'Vente'}</small>
-                    </td>
-                    <td>{fmtEur(a.prix)}</td>
-                    <td>{a.surface ? `${a.surface} m²` : '—'}</td>
-                    <td>
-                      <span className="badge-statut" style={{ background: info.color + '22', color: info.color }}>{info.label}</span>
-                    </td>
-                    <td>
-                      {a.contact?.telephone ? (
-                        <a href={`tel:${a.contact.telephone}`} onClick={(e) => e.stopPropagation()}><b>{a.contact.telephone}</b></a>
-                      ) : (
-                        <em style={{ color: 'var(--muted, #999)' }}>{a.contact?.telStatut === 'indisponible' ? 'Tél indisponible' : '—'}</em>
-                      )}
-                      {a.contact?.nom ? <><br /><small>{a.contact.nom}</small></> : null}
-                    </td>
-                    <td>{a.dateParution ? new Date(a.dateParution).toLocaleDateString('fr-FR') : '—'}</td>
-                    <td>
-                      <a href={a.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>Voir ↗</a>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="annonces-list">
+          {listeTriee.map((a) => (
+            <CarteAnnonce key={a.id} a={a} onOpen={setDetailId} onFavori={toggleFavori} onStatut={null} />
+          ))}
         </div>
       )}
 
@@ -462,6 +646,20 @@ export default function Pige() {
       )}
 
       {detailId && <DetailAnnonce annonceId={detailId} onClose={() => { setDetailId(null); load(); }} onChanged={load} />}
+    </div>
+  );
+}
+
+/* ---------- Mini barres verticales colorées (style Dribbble top cards) ---------- */
+function MiniBarres({ data }) {
+  const max = Math.max(...data.map((d) => d.v), 1);
+  return (
+    <div className="minibars">
+      {data.map((d, i) => (
+        <div key={i} className="minibar-col">
+          <div className="minibar" style={{ height: `${8 + (d.v / max) * 44}px`, background: d.v ? d.color : '#eef1f6' }} title={`${d.label} : ${d.v}`}></div>
+        </div>
+      ))}
     </div>
   );
 }
