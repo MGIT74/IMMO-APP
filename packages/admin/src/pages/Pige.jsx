@@ -344,6 +344,24 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
 
 function IconRun() { return <span>▶</span>; }
 
+/* ---------- Toast / pop-up élégant ---------- */
+function Toast({ toast, onClose }) {
+  if (!toast) return null;
+  const isError = toast.type === 'error';
+  return (
+    <div className="toast-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className={'toast-box' + (isError ? ' toast-err' : ' toast-ok')} role="alert">
+        <div className="toast-icon">{isError ? '⚠️' : '✅'}</div>
+        <div className="toast-body">
+          <b>{isError ? 'Une erreur est survenue' : 'Succès'}</b>
+          <p>{toast.msg}</p>
+        </div>
+        <button className="toast-btn" onClick={onClose}>OK</button>
+      </div>
+    </div>
+  );
+}
+
 export default function Pige() {
   const [annonces, setAnnonces] = useState([]);
   const [recherches, setRecherches] = useState([]);
@@ -352,6 +370,7 @@ export default function Pige() {
   const [loading, setLoading] = useState(true);
   const [busyRun, setBusyRun] = useState(null);
   const [detailId, setDetailId] = useState(null);
+  const [toast, setToast] = useState(null);
   const [tri, setTri] = useState('dateParution');
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
@@ -421,31 +440,41 @@ export default function Pige() {
 
   async function lancerRecherche(id) {
     setBusyRun(id);
+    setToast(null);
     try {
-      await api.post(`/api/admin/pige/recherches/${id}/run`);
+      const result = await api.post(`/api/admin/pige/recherches/${id}/run`);
+      setToast({
+        type: 'ok',
+        msg: `Collecte terminée : ${result?.total ?? 0} annonce(s) traitée(s), ${result?.nouveaux ?? 0} nouvelle(s), ${result?.maj ?? 0} mise(s) à jour, ${result?.telephones ?? 0} numéro(s) obtenu(s).`,
+      });
       await load();
     } catch (e) {
-      alert(`Erreur : ${e.message}`);
+      setToast({ type: 'error', msg: e.message });
     }
     setBusyRun(null);
   }
 
   async function creerRecherche(e) {
     e.preventDefault();
-    await api.post('/api/admin/pige/recherches', {
-      nom: nouvelleRech.nom,
-      source: 'leboncoin',
-      apifyInput: {
-        immobilierCategory: '9',
-        location: nouvelleRech.location,
-        seller_type: 'private',
-        includePhone: true,
-        includeSeller: false,
-        adLimit: Number(nouvelleRech.adLimit) || 100,
-      },
-    });
-    setNouvelleRech({ nom: '', location: 'Saint-Julien-en-Genevois 74160', adLimit: 100 });
-    load();
+    try {
+      await api.post('/api/admin/pige/recherches', {
+        nom: nouvelleRech.nom,
+        source: 'leboncoin',
+        apifyInput: {
+          immobilierCategory: '9',
+          location: nouvelleRech.location,
+          seller_type: 'private',
+          includePhone: true,
+          includeSeller: false,
+          adLimit: Number(nouvelleRech.adLimit) || 100,
+        },
+      });
+      setToast({ type: 'ok', msg: `Recherche « ${nouvelleRech.nom} » créée. Elle sera exécutée par le cron n8n 3x/jour.` });
+      setNouvelleRech({ nom: '', location: 'Saint-Julien-en-Genevois 74160', adLimit: 100 });
+      load();
+    } catch (err) {
+      setToast({ type: 'error', msg: err.message });
+    }
   }
 
   async function toggleFavori(a) {
@@ -657,6 +686,7 @@ export default function Pige() {
       )}
 
       {detailId && <DetailAnnonce annonceId={detailId} onClose={() => { setDetailId(null); load(); }} onChanged={load} />}
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }
