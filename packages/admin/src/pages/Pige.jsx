@@ -353,10 +353,13 @@ export default function Pige() {
   const [busyRun, setBusyRun] = useState(null);
   const [detailId, setDetailId] = useState(null);
   const [tri, setTri] = useState('dateParution');
+  const [perPage, setPerPage] = useState(10);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [filtres, setFiltres] = useState({ q: '', cp: '', prixMax: '', surfMin: '', trans: '', statut: '', avecTel: false, repub: false });
   const [nouvelleRech, setNouvelleRech] = useState({ nom: '', location: 'Saint-Julien-en-Genevois 74160', adLimit: 100 });
 
-  async function load() {
+  async function load(pageArgs = page) {
     setLoading(true);
     const params = new URLSearchParams();
     if (filtres.q) params.set('q', filtres.q);
@@ -367,11 +370,11 @@ export default function Pige() {
     if (filtres.statut) params.set('statut', filtres.statut);
     if (filtres.avecTel) params.set('avecTel', '1');
     if (filtres.repub) params.set('repub', '1');
-    params.set('perPage', '50');
+    params.set('page', String(pageArgs));
+    params.set('perPage', String(perPage));
     const data = await api.get(`/api/admin/pige/annonces?${params.toString()}`);
-    let list = (data && data.annonces) || [];
-    // Tri local (+ histo inclus via détail ? non : light → histo absent des listes)
-    setAnnonces(list);
+    setAnnonces((data && data.annonces) || []);
+    setTotal(data?.total || 0);
     const [r, s, runsData] = await Promise.all([
       api.get('/api/admin/pige/recherches'),
       api.get('/api/admin/pige/stats'),
@@ -383,7 +386,14 @@ export default function Pige() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(page); }, [page, perPage]);
+
+  function changerPerPage(n) {
+    setPerPage(n);
+    setPage(1);
+  }
+
+  const nbPages = Math.max(1, Math.ceil(total / perPage));
 
   const listeTriee = useMemo(() => {
     const arr = [...annonces];
@@ -397,6 +407,17 @@ export default function Pige() {
     }[tri];
     return cmp ? arr.sort(cmp) : arr;
   }, [annonces, tri]);
+
+  async function appliquerFiltres() {
+    setPage(1);
+    await load(1);
+  }
+
+  function allerPage(p) {
+    if (p < 1 || p > nbPages || p === page) return;
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   async function lancerRecherche(id) {
     setBusyRun(id);
@@ -568,9 +589,12 @@ export default function Pige() {
           <option value="surface">Plus grandes surfaces</option>
           <option value="repub">Plus republicées</option>
         </select>
+        <select value={perPage} onChange={(e) => changerPerPage(Number(e.target.value))} title="Lignes par page">
+          {[5, 10, 15, 20, 25, 50].map((n) => <option key={n} value={n}>{n} / page</option>)}
+        </select>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.avecTel} onChange={(e) => setFiltres({ ...filtres, avecTel: e.target.checked })} /> Avec tél.</label>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.repub} onChange={(e) => setFiltres({ ...filtres, repub: e.target.checked })} /> Republiées</label>
-        <button onClick={load}>Appliquer</button>
+        <button onClick={appliquerFiltres}>Appliquer</button>
       </div>
 
       {loading ? (
@@ -581,11 +605,33 @@ export default function Pige() {
           <p style={{ color: 'var(--muted, #888)' }}>Lance une recherche ou attends le cron n8n 3x/jour.</p>
         </div>
       ) : (
-        <div className="annonces-list">
-          {listeTriee.map((a) => (
-            <CarteAnnonce key={a.id} a={a} onOpen={setDetailId} onFavori={toggleFavori} onStatut={null} />
-          ))}
-        </div>
+        <>
+          <div className="annonces-list">
+            {listeTriee.map((a) => (
+              <CarteAnnonce key={a.id} a={a} onOpen={setDetailId} onFavori={toggleFavori} />
+            ))}
+          </div>
+
+          {nbPages > 1 && (
+            <div className="pagination">
+              <button className="pg-btn" disabled={page === 1} onClick={() => allerPage(page - 1)}>← Précédent</button>
+              <div className="pg-pages">
+                {Array.from({ length: nbPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === nbPages || Math.abs(p - page) <= 1)
+                  .map((p, idx, arr) => (
+                    <span key={p} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {idx > 0 && arr[idx - 1] < p - 1 && <span className="pg-ellipsis">…</span>}
+                      <button className={'pg-btn pg-num' + (p === page ? ' current' : '')} onClick={() => allerPage(p)}>{p}</button>
+                    </span>
+                  ))}
+              </div>
+              <button className="pg-btn" disabled={page === nbPages} onClick={() => allerPage(page + 1)}>Suivant →</button>
+            </div>
+          )}
+          <div className="pagination-info muted">
+            {total} annonce{total > 1 ? 's' : ''} · page {page}/{nbPages}
+          </div>
+        </>
       )}
 
       {runs.length > 0 && (
