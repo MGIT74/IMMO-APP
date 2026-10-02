@@ -32,6 +32,8 @@ async function request(path, options = {}) {
 export const api = {
   get: (path, options) => request(path, options),
   post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
+  patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  request,
   login: (email, password) =>
     fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',

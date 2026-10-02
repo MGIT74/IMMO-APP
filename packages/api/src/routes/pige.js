@@ -88,7 +88,7 @@ pigeAdminRouter.post('/recherches/:id/run', async (req, res) => {
 /* ---------- Annonces avec filtres ---------- */
 
 pigeAdminRouter.get('/annonces', async (req, res) => {
-  const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, page = 1, perPage = 30 } = req.query;
+  const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub, page = 1, perPage = 30 } = req.query;
 
   const where = {
     ...(cp ? { cp: { startsWith: String(cp).slice(0, 2) } } : {}),
@@ -98,6 +98,9 @@ pigeAdminRouter.get('/annonces', async (req, res) => {
     ...(dpe ? { dpe: { in: String(dpe).split(',') } } : {}),
     ...(nouveau === '1' ? { estNouveau: true } : {}),
     ...(rechercheId ? { rechercheId: Number(rechercheId) } : {}),
+    ...(statut ? { statut: String(statut) } : {}),
+    ...(favori === '1' ? { estFavori: true } : {}),
+    ...(repub === '1' ? { nbRepubs: { gte: 1 } } : {}),
     ...(prixMin || prixMax ? { prix: { ...(prixMin ? { gte: Number(prixMin) } : {}), ...(prixMax ? { lte: Number(prixMax) } : {}) } } : {}),
     ...(surfMin || surfMax ? { surface: { ...(surfMin ? { gte: Number(surfMin) } : {}), ...(surfMax ? { lte: Number(surfMax) } : {}) } } : {}),
     ...(q ? { OR: [{ titre: { contains: String(q) } }, { texte: { contains: String(q) } }, { ville: { contains: String(q) } }] } : {}),
@@ -116,14 +119,80 @@ pigeAdminRouter.get('/annonces', async (req, res) => {
   res.json({ total, page: Number(page), perPage: Number(perPage), annonces });
 });
 
-// Détail d'une annonce
+// Détail d'une annonce (historique prix + événements + contact)
 pigeAdminRouter.get('/annonces/:id', async (req, res) => {
   const annonce = await prisma.pigeAnnonce.findUnique({
     where: { id: Number(req.params.id) },
-    include: { contact: true, prixHistorique: { orderBy: { date: 'desc' } } },
+    include: {
+      contact: true,
+      prixHistorique: { orderBy: { date: 'asc' } },
+      evenements: { orderBy: { createdAt: 'desc' }, take: 50 },
+    },
   });
   if (!annonce) return res.status(404).json({ error: 'Annonce introuvable.' });
   res.json(annonce);
+});
+
+// Annonces republicées (même bien reposté plusieurs fois = vendeur motivé ou agence déguisée)
+pigeAdminRouter.get('/republications', async (req, res) => {
+  const min = Number(req.query.min || 1);
+  const repubs = await prisma.pigeAnnonce.findMany({
+    where: { nbRepubs: { gte: min } },
+    include: { contact: true },
+    orderBy: { nbRepubs: 'desc' },
+    take: 50,
+  });
+  res.json(repubs);
+});
+
+// Baisses de prix récentes (opportunités)
+pigeAdminRouter.get('/baisses-prix', async (req, res) => {
+  const jours = Number(req.query.jours || 14);
+  const evts = await prisma.pigeEvenement.findMany({
+    where: { type: 'baisse_prix', createdAt: { gte: new Date(Date.now() - jours * 864e5) } },
+    include: { annonce: { include: { contact: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+  res.json(evts);
+});
+
+/* ---------- Suivi CRM ---------- */
+
+const STATUTS = ['nouveau', 'a_contacter', 'contacte', 'interesse', 'negocie', 'archive'];
+
+pigeAdminRouter.patch('/annonces/:id/statut', async (req, res) => {
+  const { statut, noteMemo, estFavori, rappelAt } = req.body ?? {};
+  if (statut !== undefined && !STATUTS.includes(statut)) {
+    return res.status(400).json({ error: `statut doit être : ${STATUTS.join(', ')}` });
+  }
+  const annonce = await prisma.pigeAnnonce.update({
+    where: { id: Number(req.params.id) },
+    data: {
+      ...(statut !== undefined ? { statut } : {}),
+      ...(noteMemo !== undefined ? { noteMemo } : {}),
+      ...(estFavori !== undefined ? { estFavori } : {}),
+      ...(rappelAt !== undefined ? { rappelAt: rappelAt ? new Date(rappelAt) : null } : {}),
+    },
+  });
+  if (statut !== undefined) {
+    await prisma.pigeEvenement.create({
+      data: { annonceId: annonce.id, type: 'statut', detail: `Statut → ${statut}` },
+    });
+  }
+  res.json(annonce);
+});
+
+// Ajouter une note / appel au journal
+pigeAdminRouter.post('/annonces/:id/evenements', async (req, res) => {
+  const { type, detail } = req.body ?? {};
+  if (!['appel', 'note', 'tel_obtenu'].includes(type)) {
+    return res.status(400).json({ error: 'type doit être : appel, note ou tel_obtenu' });
+  }
+  const evt = await prisma.pigeEvenement.create({
+    data: { annonceId: Number(req.params.id), type, detail: detail ?? null },
+  });
+  res.status(201).json(evt);
 });
 
 /* ---------- Runs & stats ---------- */
@@ -138,16 +207,23 @@ pigeAdminRouter.get('/runs', async (req, res) => {
 });
 
 pigeAdminRouter.get('/stats', async (req, res) => {
-  const [total, avecTel, nouveaux7j, coutTotal] = await Promise.all([
+  const [total, avecTel, nouveaux7j, coutTotal, parStatut, nbRepubs, baisses7j] = await Promise.all([
     prisma.pigeAnnonce.count(),
     prisma.pigeContact.count({ where: { telephone: { not: null } } }),
     prisma.pigeAnnonce.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 864e5) } } }),
     prisma.pigeRun.aggregate({ _sum: { coutUsd: true } }),
+    prisma.pigeAnnonce.groupBy({ by: ['statut'], _count: true }),
+    prisma.pigeAnnonce.count({ where: { nbRepubs: { gte: 1 } } }),
+    prisma.pigeEvenement.count({ where: { type: 'baisse_prix', createdAt: { gte: new Date(Date.now() - 7 * 864e5) } } }),
   ]);
+  const statutMap = Object.fromEntries(parStatut.map((s) => [s.statut, s._count]));
   res.json({
     totalAnnonces: total,
     avecTelephone: avecTel,
     nouveaux7j,
     coutTotalUsd: coutTotal._sum.coutUsd ?? 0,
+    parStatut: statutMap,
+    republicees: nbRepubs,
+    baisses7j,
   });
 });

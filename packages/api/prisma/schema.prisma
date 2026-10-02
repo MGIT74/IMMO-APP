@@ -172,46 +172,72 @@ model PigeAnnonce {
   rechercheId Int?
   recherche   PigeRecherche? @relation(fields: [rechercheId], references: [id], onDelete: SetNull)
 
-  source          String // "leboncoin" | "seloger"
-  sourceId        String? // list_id LBC ou id SeLoger
-  url             String
-  titre           String?
-  texte           String?   @db.Text
-  trans           String? // V = vente, L = location
-  typeBien        String? // Appartement, Maison, Terrain...
-  prix            Float?
-  surface         Float?
-  pieces          Int?
-  chambres        Int?
-  dpe             String? // lettre A-G
-  ges             String?
-  etage           String?
-  exterieur       String? // balcony, terrace, garden, swimming_pool...
-  meuble          Boolean?
-  cp              String?
-  ville           String?
-  dept            String?
-  latitude        Float?
-  longitude       Float? // position approximative Leboncoin (pas l'adresse exacte)
-  photoUrl        String?
-  photosJson      Json? // galerie complète
-  dateParution    DateTime?
+  source              String // "leboncoin" | "seloger"
+  sourceId            String? // list_id LBC ou id SeLoger
+  url                 String
+  titre               String?
+  texte               String?   @db.Text
+  trans               String? // V = vente, L = location
+  typeBien            String? // Appartement, Maison, Terrain...
+  prix                Float?
+  surface             Float?
+  pieces              Int?
+  chambres            Int?
+  dpe                 String? // lettre A-G
+  ges                 String?
+  etage               String?
+  exterieur           String? // balcony, terrace, garden, swimming_pool...
+  meuble              Boolean?
+  cp                  String?
+  ville               String?
+  dept                String?
+  latitude            Float?
+  longitude           Float? // position approximative Leboncoin (pas l'adresse exacte)
+  photoUrl            String?
+  photosJson          Json? // galerie complète
+  dateParution        DateTime?
   // Fingerprint anti-doublon : même bien reposté sous une autre annonce
-  fingerprint     String?
+  fingerprint         String?
+  // Republication : compteur de scans avec annonce "absente puis revenue"
+  nbRepubs            Int       @default(0)
+  derniereDisparition DateTime?
+  // Statut vu / prix initial pour l'évolution
+  prixInitial         Float?
+  // Suivi CRM
+  statut              String    @default("nouveau") // nouveau | a_contacter | contacte | interesse | negocie | archive
+  noteMemo            String?   @db.Text // mémo libre de l'agent
+  estFavori           Boolean   @default(false)
+  rappelAt            DateTime? // rappel planifié (optionnel)
   // Suivi
-  estNouveau      Boolean   @default(true)
-  dateDernierScan DateTime  @default(now())
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  estNouveau          Boolean   @default(true)
+  dateDernierScan     DateTime  @default(now())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   contact        PigeContact?
   prixHistorique PigeHistoriquePrix[]
+  evenements     PigeEvenement[]
 
   @@unique([source, url])
   @@index([cp])
   @@index([ville])
   @@index([prix])
   @@index([dateParution])
+  @@index([statut])
+  @@index([fingerprint])
+}
+
+// Journal des événements de vie de l'annonce (nouveau, republication, baisse de prix, appel...)
+model PigeEvenement {
+  id        Int         @id @default(autoincrement())
+  annonceId Int
+  annonce   PigeAnnonce @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+  type      String // creation | republication | baisse_prix | hausse_prix | tel_obtenu | appel | note | statut
+  detail    String?     @db.Text
+  valeur    Float? // pour les événements liés au prix
+  createdAt DateTime    @default(now())
+
+  @@index([annonceId])
 }
 
 // Contact vendeur (particulier) relié à une annonce ; téléphone optionnel

@@ -117,7 +117,7 @@ export async function ingestItems(recherche, items) {
 
     let annonce;
     if (existing) {
-      // Prix changé → historique
+      // Prix changé → historique + événement
       const prixChanged = mapped.prix && existing.prix && mapped.prix !== existing.prix;
       annonce = await prisma.pigeAnnonce.update({
         where: { id: existing.id },
@@ -133,6 +133,14 @@ export async function ingestItems(recherche, items) {
         await prisma.pigeHistoriquePrix.create({
           data: { annonceId: annonce.id, prix: mapped.prix },
         });
+        await prisma.pigeEvenement.create({
+          data: {
+            annonceId: annonce.id,
+            type: mapped.prix < existing.prix ? 'baisse_prix' : 'hausse_prix',
+            valeur: mapped.prix,
+            detail: `Prix ${mapped.prix < existing.prix ? 'baissé' : 'augmenté'} de ${existing.prix} → ${mapped.prix}`,
+          },
+        });
       }
       maj++;
     } else {
@@ -145,12 +153,37 @@ export async function ingestItems(recherche, items) {
         if (dup) dupId = dup.id;
       }
       annonce = await prisma.pigeAnnonce.create({
-        data: { ...mapped, _contact: undefined, rechercheId: recherche.id },
+        data: {
+          ...mapped,
+          _contact: undefined,
+          rechercheId: recherche.id,
+          // Hérite le suivi CRM du doublon (même bien reposté) : statut/mémo/favori conservés
+          ...(dupId ? {
+            prixInitial: undefined,
+          } : {}),
+        },
       });
-      if (mapped.fingerprint && dupId) {
-        // On marque le lien de doublon via le même fingerprint (déjà stocké),
-        // rien de plus à faire : la requête admin peut regrouper par fingerprint.
+      // Prix initial pour les graphes d'évolution
+      if (mapped.prix && !annonce.prixInitial) {
+        await prisma.pigeAnnonce.update({ where: { id: annonce.id }, data: { prixInitial: mapped.prix } });
       }
+      if (dupId) {
+        // Même bien reposté → incrémente le compteur de republication du précédent et journalise
+        const dup = await prisma.pigeAnnonce.update({
+          where: { id: dupId },
+          data: { nbRepubs: { increment: 1 } },
+        });
+        await prisma.pigeEvenement.create({
+          data: {
+            annonceId: dupId,
+            type: 'republication',
+            detail: `Reposté sous une nouvelle URL : ${mapped.url ?? '(url inconnue)'} (nouvelle annonce id ${annonce.id})`,
+          },
+        });
+      }
+      await prisma.pigeEvenement.create({
+        data: { annonceId: annonce.id, type: 'creation', detail: `Annonce collectée sur ${mapped.source}` },
+      });
       nouveaux++;
     }
 

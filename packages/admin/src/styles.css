@@ -236,3 +236,34 @@ button.danger { background: #e53935; }
 .pige-stat { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 20px; display: flex; flex-direction: column; }
 .pige-stat b { font-size: 22px; }
 .pige-stat span { color: #6b7280; font-size: 12px; }
+
+/* Pipeline par statut */
+.pige-pipeline { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.pige-pipe-btn { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #e5e7eb; border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+.pige-pipe-btn b { margin-left: 2px; }
+.pige-pipe-btn .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.pige-pipe-btn.active { border-width: 2px; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.pige-pipe-btn.clear { color: #ef4444; }
+
+/* Badges */
+.badge-statut { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.badge-repub { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #fef3c7; color: #b45309; margin-left: 6px; white-space: nowrap; }
+.badge-prix { margin-left: 5px; }
+
+/* Bouton favori */
+.btn-favori-on { background: #fef9c3; border-color: #facc15; }
+
+/* Drawer détail */
+.drawer { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 100; display: flex; justify-content: flex-end; }
+.drawer-panel { background: #fff; width: min(640px, 96vw); height: 100%; overflow-y: auto; padding: 24px; position: relative; animation: drawerIn .18s ease; }
+@keyframes drawerIn { from { transform: translateX(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+.drawer-close { position: absolute; top: 12px; right: 14px; background: var(--bg, #f3f4f6); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 14px; }
+.pige-crm-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.pige-journal { max-height: 260px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; }
+.pige-journal-row { display: flex; gap: 10px; padding: 6px 2px; border-bottom: 1px solid #f3f4f6; }
+.pige-journal-row:last-child { border-bottom: none; }
+.pige-lien-source { display: inline-block; margin-top: 14px; font-size: 13px; }
+
+/* Graphe prix */
+.graphe-prix { background: #fafafa; border-radius: 8px; padding: 8px; }
+.graphe-vide { background: #fafafa; border-radius: 8px; padding: 16px 8px; text-align: center; }
