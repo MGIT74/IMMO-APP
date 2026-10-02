@@ -109,7 +109,10 @@ pigeAdminRouter.get('/annonces', async (req, res) => {
   const [annonces, total] = await Promise.all([
     prisma.pigeAnnonce.findMany({
       where,
-      include: { contact: true },
+      include: {
+        contact: true,
+        prixHistorique: { orderBy: { date: 'asc' } },
+      },
       orderBy: { dateParution: 'desc' },
       skip: (Number(page) - 1) * Number(perPage),
       take: Number(perPage),

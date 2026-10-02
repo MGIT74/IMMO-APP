@@ -14,25 +14,6 @@ const statutInfo = (k) => STATUTS.find((s) => s.key === k) || STATUTS[0];
 const fmtEur = (n) => (n != null ? Number(n).toLocaleString('fr-FR').replace(/,/g, ' ') + ' €' : '—');
 const fmtNum = (n) => (n != null ? Number(n).toLocaleString('fr-FR').replace(/,/g, ' ') : '—');
 
-/* ---------- Jauge circulaire (score d'opportunité) ---------- */
-function Jauge({ value, size = 64 }) {
-  const r = (size - 10) / 2;
-  const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(100, value));
-  const color = pct >= 70 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#9ca3af';
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef1f6" strokeWidth="6" />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="6"
-        strokeDasharray={`${(pct / 100) * c} ${c}`} strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`} />
-      <text x="50%" y="52%" textAnchor="middle" dominantBaseline="middle" fontSize="15" fontWeight="700" fill={color}>
-        {Math.round(pct)}%
-      </text>
-    </svg>
-  );
-}
-
 /* ---------- Sparkline prix (style Dribbble : mini courbe + badge variation) ---------- */
 function SparkPrix({ points, h = 44 }) {
   if (!points || points.length < 2) return <span className="spark-flat">— stable</span>;
@@ -138,24 +119,12 @@ const TYPE_EVT_LABEL = {
   statut: ['🔄', 'Statut'],
 };
 
-/* ---------- Score d'opportunité (0-100) ---------- */
-function scoreOpportunite(a) {
-  let s = 30;
-  if (a.prixHistorique?.some?.((h) => true) && a.prix != null && a.prixInitial != null && a.prix < a.prixInitial) s += 25; // baisse de prix
-  if (a.nbRepubs > 0) s += Math.min(a.nbRepubs * 10, 20); // republié = vendeur motivated
-  if (a.contact?.telephone) s += 25; // callable now
-  if (a.prixParM2 && a.avgPrixM2Ville && a.prixParM2 < a.avgPrixM2Ville * 0.92) s += 10; // sous la moyenne ville
-  if (a.estFavori) s += 5;
-  return Math.min(100, s);
-}
-
 /* ---------- Carte annonce (style Dribbble) ---------- */
-function CarteAnnonce({ a, onOpen, onStatut, onFavori }) {
+function CarteAnnonce({ a, onOpen, onFavori }) {
   const info = statutInfo(a.statut);
-  const score = scoreOpportunite(a);
-  const hist = a._hist || [];
+  const hist = a.prixHistorique || [];
   const points = a.prixInitial && (!hist.length || hist[0].prix !== a.prixInitial)
-    ? [{ prix: a.prixInitial }, ...hist] : hist;
+    ? [{ prix: a.prixInitial, date: null }, ...hist.map((h) => ({ prix: h.prix, date: h.date }))] : hist;
   const jourDepuisScan = a.dateDernierScan ? Math.floor((Date.now() - new Date(a.dateDernierScan)) / 864e5) : null;
 
   return (
@@ -203,8 +172,6 @@ function CarteAnnonce({ a, onOpen, onStatut, onFavori }) {
       <div className="annonce-side">
         <div className="annonce-statuts">
           <span className="pt" style={{ color: info.color }}>● {info.label}</span>
-          {a.contact?.telephone && <span style={{ color: '#10b981' }}>● Tél dispo</span>}
-          {a.prixInitial != null && a.prix < a.prixInitial && <span style={{ color: '#10b981' }}>● Baisse prix</span>}
         </div>
         <div className="annonce-contact">
           {a.contact?.telephone ? (
@@ -212,11 +179,10 @@ function CarteAnnonce({ a, onOpen, onStatut, onFavori }) {
           ) : <span className="muted">{a.contact?.telStatut === 'non_revele' ? 'Tél non révélé (retry auto)' : 'Tél indisponible'}</span>}
           {a.contact?.nom && <div className="muted" style={{ fontSize: 12 }}>{a.contact.nom}</div>}
         </div>
-        <Jauge value={score} />
         <div className="annonce-actions" onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => onFavori(a)} className={a.estFavori ? 'btn-mini on' : 'btn-mini'}>{a.estFavori ? '★' : '☆'}</button>
+          <button onClick={() => onFavori(a)} className={a.estFavori ? 'btn-mini on' : 'btn-mini'} title="Favori">{a.estFavori ? '★' : '☆'}</button>
           <button onClick={() => onOpen(a.id)} className="btn-mini">Détail</button>
-          <a href={a.url} target="_blank" rel="noreferrer" className="btn-mini">↗</a>
+          <a href={a.url} target="_blank" rel="noreferrer" className="btn-mini" title="Voir sur Leboncoin">↗</a>
         </div>
       </div>
 
@@ -299,7 +265,6 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
               )}
             </div>
           </div>
-          <Jauge value={scoreOpportunite(a)} size={76} />
         </div>
 
         <div className="detail-chips">
