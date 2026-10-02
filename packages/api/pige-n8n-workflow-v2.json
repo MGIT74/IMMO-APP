@@ -24,10 +24,10 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "return [{ json: { apifyInput: { \"immobilierCategory\": \"9\", \"location\": \"Saint-Julien-en-Genevois 74160\", \"seller_type\": \"private\", \"includePhone\": true, \"includeSeller\": false, \"adLimit\": 15 } } }];"
+        "jsCode": "const zones = [\n  { ville: 'Saint-Julien-en-Genevois', location: 'Saint-Julien-en-Genevois 74160' },\n  { ville: 'Annemasse', location: 'Annemasse 74100' },\n  { ville: 'Thonon-les-Bains', location: 'Thonon-les-Bains 74200' },\n  { ville: 'Evian-les-Bains', location: 'Evian-les-Bains 74500' },\n];\nreturn zones.map(z => ({ json: { ...z, apifyInput: { immobilierCategory: '9', location: z.location, seller_type: 'private', includePhone: true, includeSeller: false, adLimit: 50, email: 'TON_EMAIL_LBC', password: 'TON_MDP_LBC' } } }));"
       },
-      "id": "recherche-saint-ju",
-      "name": "Recherche Saint JU",
+      "id": "zones-gen",
+      "name": "Zones Chablais + Genevois",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -43,28 +43,26 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.apifyInput) }}",
         "options": {
-          "timeout": 300000,
-          "response": {
-            "response": {
-              "neverError": false
-            }
-          }
+          "timeout": 290000
         }
       },
       "id": "apify-run-sync",
-      "name": "Lancer Actor + récupérer annonces",
+      "name": "Lancer Actor Leboncoin",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         -150,
         -100
       ],
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all().map(i => i.json).filter(j => j && Object.keys(j).length > 0);\nreturn [{ json: { source: 'leboncoin', items } }];"
+        "mode": "runOnceForEachItem",
+        "jsCode": "const zoneVille = $('Zones Chablais + Genevois').item.json.ville;\nconst items = Array.isArray($json) ? $json : ($json.json ?? []);\nconst all = [];\nfor (const it of items) {\n  if (it && (it.list_id || it.url)) { it._zone = zoneVille; all.push(it); }\n}\nreturn [{ json: { source: 'leboncoin', items: all } }];"
       },
       "id": "wrap-payload",
       "name": "Envelopper payload",
@@ -114,25 +112,25 @@
       "main": [
         [
           {
-            "node": "Recherche Saint JU",
+            "node": "Zones Chablais + Genevois",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Recherche Saint JU": {
+    "Zones Chablais + Genevois": {
       "main": [
         [
           {
-            "node": "Lancer Actor + récupérer annonces",
+            "node": "Lancer Actor Leboncoin",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Lancer Actor + récupérer annonces": {
+    "Lancer Actor Leboncoin": {
       "main": [
         [
           {
