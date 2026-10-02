@@ -16,7 +16,8 @@ const app = express();
 
 const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((s) => s.trim());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
-app.use(express.json());
+// Limite haute : le payload n8n→ingest (annonces Apify avec photos/texte) dépasse 100 KB
+app.use(express.json({ limit: '5mb' }));
 
 // Sert les photos uploadées directement (en prod, mettez plutôt Nginx devant ce dossier).
 app.use('/uploads', express.static(path.resolve('uploads')));
