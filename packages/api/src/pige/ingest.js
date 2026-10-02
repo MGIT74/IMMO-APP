@@ -29,7 +29,7 @@ function mapLeboncoin(item) {
     source: 'leboncoin',
     sourceId: item.list_id != null ? String(item.list_id) : null,
     url: item.url,
-    titre: item.title ?? null,
+    titre: item.subject ?? item.title ?? null,
     texte: item.description ?? item.body ?? null,
     trans: /locat/i.test(String(item.category_name ?? (typeof item.location === 'string' ? item.location : ''))) ? 'L' : 'V',
     typeBien: item.real_estate_type ?? null,
@@ -52,9 +52,11 @@ function mapLeboncoin(item) {
     dateParution: firstPub,
     // Contact
     _contact: {
-      nom: item.seller_name ?? null,
+      nom: item.seller_name ?? item.owner?.name ?? null,
       telephone: item.phone ?? null,
-      telStatut: item.phone ? 'disponible' : 'indisponible',
+      // has_phone = le numéro existe sur Leboncoin mais n'a pas pu être révélé
+      // (quota de révélations du compte LBC épuisé, 2FA...) → réessayable au prochain run
+      telStatut: item.phone ? 'disponible' : (item.has_phone ? 'non_revele' : 'indisponible'),
     },
   };
 }
@@ -129,6 +131,15 @@ export async function ingestItems(recherche, items) {
           rechercheId: existing.rechercheId ?? recherche.id,
         },
       });
+      // Contact réessayé à chaque scan : si le numéro apparaît maintenant, on le stocke
+      if (mapped._contact) {
+        const prev = await prisma.pigeContact.findUnique({ where: { annonceId: existing.id } });
+        if (mapped._contact.telephone && !prev?.telephone) {
+          await prisma.pigeEvenement.create({
+            data: { annonceId: annonce.id, type: 'tel_obtenu', detail: `Numéro révélé : ${mapped._contact.telephone}` },
+          });
+        }
+      }
       if (prixChanged) {
         await prisma.pigeHistoriquePrix.create({
           data: { annonceId: annonce.id, prix: mapped.prix },
@@ -187,14 +198,15 @@ export async function ingestItems(recherche, items) {
       nouveaux++;
     }
 
-    // Contact (téléphone etc.)
+    // Contact (téléphone etc.) — ne jamais écraser un numéro déjà obtenu par null
     if (mapped._contact) {
+      const prev = await prisma.pigeContact.findUnique({ where: { annonceId: annonce.id } });
       const data = {
-        nom: mapped._contact.nom,
-        telephone: mapped._contact.telephone,
-        telStatut: mapped._contact.telStatut,
+        nom: mapped._contact.nom ?? prev?.nom,
+        telephone: mapped._contact.telephone ?? prev?.telephone,
+        telStatut: mapped._contact.telephone ? 'disponible' : (prev?.telephone ? 'disponible' : mapped._contact.telStatut),
       };
-      if (data.telephone) telephones++;
+      if (data.telephone && !prev?.telephone) telephones++;
       await prisma.pigeContact.upsert({
         where: { annonceId: annonce.id },
         update: data,
