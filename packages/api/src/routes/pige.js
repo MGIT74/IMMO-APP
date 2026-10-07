@@ -46,6 +46,17 @@ pigeIngestRouter.post('/ingest', async (req, res) => {
   }
 });
 
+// Configuration minimale de collecte : aucune annonce, aucun contact et aucun secret.
+pigeAdminRouter.get('/schedule-config', async (req, res) => {
+  const recherches = await prisma.pigeRecherche.findMany({
+    where: { active: true, source: 'leboncoin' },
+    select: { id: true, apifyInput: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(recherches);
+});
+
 // Toutes les routes pige admin sont réservées à l'admin connecté
 pigeAdminRouter.use(requireAuth);
 
