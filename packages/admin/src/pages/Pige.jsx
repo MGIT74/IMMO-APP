@@ -376,7 +376,10 @@ export default function Pige() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [filtres, setFiltres] = useState({ q: '', cp: '', prixMax: '', surfMin: '', trans: '', statut: '', avecTel: false, repub: false });
-  const [nouvelleRech, setNouvelleRech] = useState({ nom: '', location: 'Saint-Julien-en-Genevois 74160', adLimit: 100 });
+  const [nouvelleRech, setNouvelleRech] = useState({ nom: '', location: 'Saint-Julien-en-Genevois', rayonKm: 20, adLimit: 100 });
+  const [zoneCommunes, setZoneCommunes] = useState([]);
+  const [zoneSelection, setZoneSelection] = useState([]);
+  const [zoneLoading, setZoneLoading] = useState(false);
 
   async function load(pageArgs = page) {
     setLoading(true);
@@ -454,6 +457,24 @@ export default function Pige() {
     setBusyRun(null);
   }
 
+  async function chargerZone() {
+    if (!nouvelleRech.location.trim()) return;
+    setZoneLoading(true);
+    try {
+      const d = await api.get('/api/admin/pige/zone-communes?nom=' + encodeURIComponent(nouvelleRech.location) + '&rayonKm=' + Number(nouvelleRech.rayonKm || 20));
+      setZoneCommunes(d.communes || []);
+      setZoneSelection((d.communes || []).map((c) => c.code));
+      if (!nouvelleRech.nom) setNouvelleRech((x) => ({ ...x, nom: (d.centre?.nom || x.location) + ' +' + d.rayonKm + ' km' }));
+    } catch (err) {
+      setToast({ type: 'error', msg: err.message });
+    }
+    setZoneLoading(false);
+  }
+
+  function toggleCommune(code) {
+    setZoneSelection((s) => s.includes(code) ? s.filter((x) => x !== code) : [...s, code]);
+  }
+
   async function creerRecherche(e) {
     e.preventDefault();
     try {
@@ -461,16 +482,20 @@ export default function Pige() {
         nom: nouvelleRech.nom,
         source: 'leboncoin',
         apifyInput: {
-          immobilierCategory: '9',
-          location: nouvelleRech.location,
-          seller_type: 'private',
-          includePhone: true,
-          includeSeller: false,
-          adLimit: Number(nouvelleRech.adLimit) || 100,
+          city: nouvelleRech.location,
+          owner_type: 'private',
+          only_with_phone: true,
+          max_items: Number(nouvelleRech.adLimit) || 100,
+          centre: nouvelleRech.location,
+          rayonKm: Number(nouvelleRech.rayonKm) || 20,
+          communes: zoneCommunes.filter((c) => zoneSelection.includes(c.code)).map((c) => ({ code: c.code, nom: c.nom, codesPostaux: c.codesPostaux, distanceKm: c.distanceKm })),
+          codesPostaux: [...new Set(zoneCommunes.filter((c) => zoneSelection.includes(c.code)).flatMap((c) => c.codesPostaux || []))],
         },
       });
       setToast({ type: 'ok', msg: `Recherche « ${nouvelleRech.nom} » créée. Elle sera exécutée par le cron n8n 3x/jour.` });
-      setNouvelleRech({ nom: '', location: 'Saint-Julien-en-Genevois 74160', adLimit: 100 });
+      setNouvelleRech({ nom: '', location: 'Saint-Julien-en-Genevois', rayonKm: 20, adLimit: 100 });
+      setZoneCommunes([]);
+      setZoneSelection([]);
       load();
     } catch (err) {
       setToast({ type: 'error', msg: err.message });
@@ -590,14 +615,38 @@ export default function Pige() {
             </tbody>
           </table>
         )}
-        <form onSubmit={creerRecherche} style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          <input placeholder="Nom (ex: Genevois ventes)" value={nouvelleRech.nom} required
-            onChange={(e) => setNouvelleRech({ ...nouvelleRech, nom: e.target.value })} style={{ flex: '1 1 160px' }} />
-          <input placeholder="Zone (ex: Ville 74160)" value={nouvelleRech.location} required
-            onChange={(e) => setNouvelleRech({ ...nouvelleRech, location: e.target.value })} style={{ flex: '2 1 220px' }} />
-          <input type="number" min="10" max="500" placeholder="100" value={nouvelleRech.adLimit}
-            onChange={(e) => setNouvelleRech({ ...nouvelleRech, adLimit: e.target.value })} style={{ width: 80 }} />
-          <button type="submit">+ Créer</button>
+        <form onSubmit={creerRecherche} style={{ marginTop: 12 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input placeholder="Nom (ex: Genevois ventes)" value={nouvelleRech.nom} required
+              onChange={(e) => setNouvelleRech({ ...nouvelleRech, nom: e.target.value })} style={{ flex: '1 1 160px' }} />
+            <input placeholder="Commune centrale" value={nouvelleRech.location} required
+              onChange={(e) => setNouvelleRech({ ...nouvelleRech, location: e.target.value })} style={{ flex: '2 1 220px' }} />
+            <label style={{ fontSize: 13 }}>Rayon
+              <select value={nouvelleRech.rayonKm} onChange={(e) => setNouvelleRech({ ...nouvelleRech, rayonKm: Number(e.target.value) })} style={{ marginLeft: 6 }}>
+                {[10, 15, 20, 25, 30, 40].map((n) => <option key={n} value={n}>{n} km</option>)}
+              </select>
+            </label>
+            <button type="button" onClick={chargerZone} disabled={zoneLoading}>{zoneLoading ? 'Recherche…' : '📍 Trouver les communes'}</button>
+            <input type="number" min="10" max="500" placeholder="100" value={nouvelleRech.adLimit}
+              onChange={(e) => setNouvelleRech({ ...nouvelleRech, adLimit: e.target.value })} style={{ width: 80 }} title="Nombre maximum d'annonces" />
+            <button type="submit" disabled={zoneCommunes.length > 0 && zoneSelection.length === 0}>+ Créer</button>
+          </div>
+          {zoneCommunes.length > 0 && (
+            <div style={{ marginTop: 12, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                <b>{zoneSelection.length} commune(s) sélectionnée(s)</b>
+                <span className="muted">{[...new Set(zoneCommunes.filter((c) => zoneSelection.includes(c.code)).flatMap((c) => c.codesPostaux || []))].length} code(s) postal(aux)</span>
+              </div>
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', maxHeight: 180, overflow: 'auto' }}>
+                {zoneCommunes.map((c) => (
+                  <label key={c.code} className="btn-mini" style={{ cursor: 'pointer', display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+                    <input type="checkbox" checked={zoneSelection.includes(c.code)} onChange={() => toggleCommune(c.code)} />
+                    {c.nom} {c.codesPostaux?.[0] || ''} <span className="muted">· {c.distanceKm} km</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </form>
       </div>
 
