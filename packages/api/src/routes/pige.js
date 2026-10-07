@@ -30,6 +30,55 @@ pigeIngestRouter.post('/ingest', async (req, res) => {
 // Toutes les routes pige admin sont réservées à l'admin connecté
 pigeAdminRouter.use(requireAuth);
 
+/* ---------- Zone géographique ---------- */
+const distanceKm = (aLat, aLon, bLat, bLon) => {
+  const R = 6371;
+  const rad = (v) => v * Math.PI / 180;
+  const dLat = rad(bLat - aLat), dLon = rad(bLon - aLon);
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(rad(aLat)) * Math.cos(rad(bLat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+};
+
+pigeAdminRouter.get('/zone-communes', async (req, res) => {
+  try {
+    const nom = String(req.query.nom || '').trim();
+    const rayonKm = Math.min(50, Math.max(1, Number(req.query.rayonKm) || 20));
+    if (!nom) return res.status(400).json({ error: 'Commune centrale requise.' });
+
+    const centreResp = await fetch('https://geo.api.gouv.fr/communes?nom=' + encodeURIComponent(nom) + '&fields=nom,code,codesPostaux,centre,codeDepartement&format=json&geometry=centre');
+    if (!centreResp.ok) throw new Error('Service géographique indisponible.');
+    const centres = await centreResp.json();
+    const centre = centres[0];
+    const coords = centre?.centre?.coordinates;
+    if (!centre || !Array.isArray(coords)) return res.status(404).json({ error: 'Commune introuvable.' });
+
+    const deptResp = await fetch('https://geo.api.gouv.fr/departements/' + encodeURIComponent(centre.codeDepartement) + '/communes?fields=nom,code,codesPostaux,centre&format=json&geometry=centre');
+    if (!deptResp.ok) throw new Error('Impossible de charger les communes du département.');
+    const communes = (await deptResp.json())
+      .map((c) => {
+        const cc = c?.centre?.coordinates;
+        if (!Array.isArray(cc)) return null;
+        return {
+          code: c.code,
+          nom: c.nom,
+          codesPostaux: c.codesPostaux || [],
+          distanceKm: Math.round(distanceKm(coords[1], coords[0], cc[1], cc[0]) * 10) / 10,
+        };
+      })
+      .filter(Boolean)
+      .filter((c) => c.distanceKm <= rayonKm)
+      .sort((a, b) => a.distanceKm - b.distanceKm || a.nom.localeCompare(b.nom, 'fr'));
+
+    res.json({
+      centre: { code: centre.code, nom: centre.nom, codesPostaux: centre.codesPostaux || [], lat: coords[1], lon: coords[0] },
+      rayonKm,
+      communes,
+    });
+  } catch (err) {
+    res.status(502).json({ error: String(err.message || err) });
+  }
+});
+
 /* ---------- Recherches ---------- */
 
 // Liste des recherches + compteur d'annonces
