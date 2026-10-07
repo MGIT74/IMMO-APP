@@ -380,6 +380,7 @@ export default function Pige() {
   const [zoneCommunes, setZoneCommunes] = useState([]);
   const [zoneSelection, setZoneSelection] = useState([]);
   const [zoneLoading, setZoneLoading] = useState(false);
+  const [editingRecherche, setEditingRecherche] = useState(null);
 
   async function load(pageArgs = page) {
     setLoading(true);
@@ -475,12 +476,44 @@ export default function Pige() {
     setZoneSelection((s) => s.includes(code) ? s.filter((x) => x !== code) : [...s, code]);
   }
 
+  async function modifierRecherche(r) {
+    const cfg = r.apifyInput || {};
+    const centre = cfg.centre || cfg.city || cfg.location || '';
+    const rayonKm = Number(cfg.rayonKm) || 20;
+    setEditingRecherche(r.id);
+    setNouvelleRech({ nom: r.nom, location: centre, rayonKm, adLimit: Number(cfg.max_items || cfg.adLimit) || 100 });
+    setZoneLoading(true);
+    try {
+      const d = await api.get('/api/admin/pige/zone-communes?nom=' + encodeURIComponent(centre) + '&rayonKm=' + rayonKm);
+      const communes = d.communes || [];
+      setZoneCommunes(communes);
+      const savedCodes = new Set((cfg.communes || []).map((x) => typeof x === 'string' ? x : x.code).filter(Boolean));
+      setZoneSelection(savedCodes.size ? communes.filter((x) => savedCodes.has(x.code)).map((x) => x.code) : communes.map((x) => x.code));
+    } catch (err) { setToast({ type: 'error', msg: err.message }); }
+    setZoneLoading(false);
+  }
+
+  function annulerModification() {
+    setEditingRecherche(null);
+    setNouvelleRech({ nom: '', location: 'Saint-Julien-en-Genevois', rayonKm: 20, adLimit: 100 });
+    setZoneCommunes([]); setZoneSelection([]);
+  }
+
+  async function supprimerRecherche(r) {
+    if (!window.confirm('Supprimer la recherche « ' + r.nom + ' » ? Les annonces déjà collectées ne seront pas supprimées.')) return;
+    try {
+      await api.delete('/api/admin/pige/recherches/' + r.id);
+      setToast({ type: 'ok', msg: 'Recherche supprimée.' });
+      if (editingRecherche === r.id) annulerModification();
+      load();
+    } catch (err) { setToast({ type: 'error', msg: err.message }); }
+  }
+
   async function creerRecherche(e) {
     e.preventDefault();
     try {
-      await api.post('/api/admin/pige/recherches', {
+      const payload = {
         nom: nouvelleRech.nom,
-        source: 'leboncoin',
         apifyInput: {
           city: nouvelleRech.location,
           owner_type: 'private',
@@ -488,18 +521,20 @@ export default function Pige() {
           max_items: Number(nouvelleRech.adLimit) || 100,
           centre: nouvelleRech.location,
           rayonKm: Number(nouvelleRech.rayonKm) || 20,
-          communes: zoneCommunes.filter((c) => zoneSelection.includes(c.code)).map((c) => ({ code: c.code, nom: c.nom, codesPostaux: c.codesPostaux, distanceKm: c.distanceKm })),
-          codesPostaux: [...new Set(zoneCommunes.filter((c) => zoneSelection.includes(c.code)).flatMap((c) => c.codesPostaux || []))],
+          communes: zoneCommunes.filter((x) => zoneSelection.includes(x.code)).map((x) => ({ code: x.code, nom: x.nom, codesPostaux: x.codesPostaux, distanceKm: x.distanceKm })),
+          codesPostaux: [...new Set(zoneCommunes.filter((x) => zoneSelection.includes(x.code)).flatMap((x) => x.codesPostaux || []))],
         },
-      });
-      setToast({ type: 'ok', msg: `Recherche « ${nouvelleRech.nom} » créée. Elle sera exécutée par le cron n8n 3x/jour.` });
-      setNouvelleRech({ nom: '', location: 'Saint-Julien-en-Genevois', rayonKm: 20, adLimit: 100 });
-      setZoneCommunes([]);
-      setZoneSelection([]);
+      };
+      if (editingRecherche) {
+        await api.patch('/api/admin/pige/recherches/' + editingRecherche, payload);
+        setToast({ type: 'ok', msg: 'Recherche modifiée. n8n utilisera cette nouvelle zone au prochain passage.' });
+      } else {
+        await api.post('/api/admin/pige/recherches', { ...payload, source: 'leboncoin' });
+        setToast({ type: 'ok', msg: 'Recherche créée. Elle sera exécutée par le cron n8n 3x/jour.' });
+      }
+      annulerModification();
       load();
-    } catch (err) {
-      setToast({ type: 'error', msg: err.message });
-    }
+    } catch (err) { setToast({ type: 'error', msg: err.message }); }
   }
 
   async function toggleFavori(a) {
@@ -606,15 +641,20 @@ export default function Pige() {
                   <td>{r.nbAnnonces}</td>
                   <td>{r.derniereRun ? new Date(r.derniereRun).toLocaleString('fr-FR') : '—'}</td>
                   <td>
-                    <button className="small" disabled={busyRun === r.id} onClick={() => lancerRecherche(r.id)}>
-                      {busyRun === r.id ? 'En cours…' : (<><IconRun /> Lancer</>)}
-                    </button>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button className="small" disabled={busyRun === r.id} onClick={() => lancerRecherche(r.id)}>
+                        {busyRun === r.id ? 'En cours…' : (<><IconRun /> Lancer</>)}
+                      </button>
+                      <button className="small" onClick={() => modifierRecherche(r)}>✏️ Modifier</button>
+                      <button className="small" onClick={() => supprimerRecherche(r)} title="Supprimer la recherche">🗑 Supprimer</button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
+        {editingRecherche && <div style={{ marginTop: 12, fontWeight: 600 }}>✏️ Modification de la recherche sélectionnée</div>}
         <form onSubmit={creerRecherche} style={{ marginTop: 12 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <input placeholder="Nom (ex: Genevois ventes)" value={nouvelleRech.nom} required
@@ -629,7 +669,8 @@ export default function Pige() {
             <button type="button" onClick={chargerZone} disabled={zoneLoading}>{zoneLoading ? 'Recherche…' : '📍 Trouver les communes'}</button>
             <input type="number" min="10" max="500" placeholder="100" value={nouvelleRech.adLimit}
               onChange={(e) => setNouvelleRech({ ...nouvelleRech, adLimit: e.target.value })} style={{ width: 80 }} title="Nombre maximum d'annonces" />
-            <button type="submit" disabled={zoneCommunes.length > 0 && zoneSelection.length === 0}>+ Créer</button>
+            <button type="submit" disabled={zoneCommunes.length > 0 && zoneSelection.length === 0}>{editingRecherche ? '💾 Enregistrer' : '+ Créer'}</button>
+            {editingRecherche && <button type="button" onClick={annulerModification}>Annuler</button>}
           </div>
           {zoneCommunes.length > 0 && (
             <div style={{ marginTop: 12, padding: 12, border: '1px solid #e5e7eb', borderRadius: 10 }}>
