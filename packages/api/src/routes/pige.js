@@ -10,6 +10,25 @@ export const pigeAdminRouter = Router();
 // pas de JWT (n8n ne gère pas le login admin).
 export const pigeIngestRouter = Router();
 
+const requirePigeIngestSecret = (req, res) => {
+  const secret = req.headers['x-ingest-secret'];
+  if (!process.env.PIGE_INGEST_SECRET || secret !== process.env.PIGE_INGEST_SECRET) {
+    res.status(401).json({ error: 'Secret invalide.' });
+    return false;
+  }
+  return true;
+};
+
+pigeIngestRouter.get('/recherches', async (req, res) => {
+  if (!requirePigeIngestSecret(req, res)) return;
+  const recherches = await prisma.pigeRecherche.findMany({
+    where: { active: true, source: 'leboncoin' },
+    select: { id: true, nom: true, source: true, apifyInput: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  res.json(recherches);
+});
+
 pigeIngestRouter.post('/ingest', async (req, res) => {
   const secret = req.headers['x-ingest-secret'];
   if (!process.env.PIGE_INGEST_SECRET || secret !== process.env.PIGE_INGEST_SECRET) {
