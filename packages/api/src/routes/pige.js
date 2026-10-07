@@ -29,6 +29,16 @@ pigeIngestRouter.get('/recherches', async (req, res) => {
   res.json(recherches);
 });
 
+pigeIngestRouter.get('/schedule-config', async (req, res) => {
+  const recherches = await prisma.pigeRecherche.findMany({
+    where: { active: true, source: 'leboncoin' },
+    select: { id: true, apifyInput: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(recherches);
+});
+
 pigeIngestRouter.post('/ingest', async (req, res) => {
   const secret = req.headers['x-ingest-secret'];
   if (!process.env.PIGE_INGEST_SECRET || secret !== process.env.PIGE_INGEST_SECRET) {
