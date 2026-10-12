@@ -238,32 +238,51 @@ pigeAdminRouter.get('/republications', async (req, res) => {
   res.json(repubs);
 });
 
-// Tension du marché par zone : vitesse d'enlèvement des annonces (proxy de la demande acheteur)
+// Tension du marché par zone : temps de vente MÉDIAN sur les sorties définitives uniquement.
+// Un retrait ≠ une vente : on sépare republication / en attente / vente probable.
 pigeAdminRouter.get('/tension', async (req, res) => {
   const rows = await prisma.pigeAnnonce.findMany({
     where: { zone: { not: null } },
-    select: { zone: true, enleve: true, dateParution: true, dateEnlevement: true, createdAt: true },
+    select: { zone: true, enleve: true, sort: true, dateParution: true, dateEnlevement: true, createdAt: true, nbRepubs: true },
   });
   const zones = {};
   for (const r of rows) {
-    const z = (zones[r.zone] ??= { total: 0, actifs: 0, enlevees: 0, durees: [] });
+    const z = (zones[r.zone] ??= { total: 0, actifs: 0, sortiesDefinitives: [], republiees: 0, enAttente: 0, joursEnLigneSorties: [] });
     z.total++;
-    if (r.enleve && r.dateEnlevement) {
-      z.enlevees++;
+    if (!r.enleve) { z.actifs++; continue; }
+    if (r.sort === 'vente_probable' || (r.sort == null && r.dateEnlevement)) {
       const debut = r.dateParution || r.createdAt;
       const jours = Math.max(1, (r.dateEnlevement - debut) / 864e5);
-      if (jours <= 365) z.durees.push(jours);
+      if (jours <= 365) {
+        z.sortiesDefinitives.push(jours);
+        z.joursEnLigneSorties.push(jours);
+      }
+    } else if (r.sort === 'republiee') {
+      z.republiees++;
     } else {
-      z.actifs++;
+      z.enAttente++;
     }
   }
   const out = Object.entries(zones).map(([zone, z]) => {
-    const ds = z.durees.sort((a, b) => a - b);
+    const ds = z.sortiesDefinitives.sort((a, b) => a - b);
     const mediane = ds.length ? (ds.length % 2 ? ds[(ds.length - 1) / 2] : (ds[ds.length / 2 - 1] + ds[ds.length / 2]) / 2) : null;
     const rapides = ds.filter((j) => j <= 10).length;
+    // Indice fiable : il faut un échantillon minimum (5 sorties définitives) sinon "en observation"
+    const echantillonOK = ds.length >= 5;
     const pct = ds.length ? Math.round((100 * rapides) / ds.length) : null;
-    const indice = pct == null ? 'inconnu' : pct >= 40 ? 'chaud' : pct >= 15 ? 'tiede' : 'calme';
-    return { zone, total: z.total, actifs: z.actifs, enlevees: z.enlevees, medianeJours: mediane != null ? Math.round(mediane) : null, pctRapides: pct, indice };
+    const indice = !echantillonOK ? 'inconnu'
+      : pct >= 40 ? 'chaud'
+      : pct >= 15 ? 'tiede'
+      : 'calme';
+    return {
+      zone, total: z.total, actifs: z.actifs,
+      sortiesDefinitives: ds.length,
+      republiees: z.republiees,
+      enAttente: z.enAttente,
+      medianeJours: mediane != null ? Math.round(mediane) : null,
+      pctRapides: pct,
+      indice,
+    };
   }).sort((a, b) => (b.pctRapides ?? -1) - (a.pctRapides ?? -1));
   res.json(out);
 });

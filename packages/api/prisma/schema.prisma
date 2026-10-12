@@ -213,6 +213,9 @@ model PigeAnnonce {
   enleve              Boolean   @default(false) // annonce disparue des scans
   dateEnlevement      DateTime?
   scansManques        Int       @default(0) // scans consécutifs où l'annonce était absente (>=3 → enlevée)
+  // Qualification de la sortie : republiee (retirée puis repostée, fingerprint) | en_attente (14 j de patience)
+  // | vente_probable (jamais reparue après 14 j) — un retrait ≠ une vente !
+  sort                String?
   // Suivi
   estNouveau          Boolean   @default(true)
   dateDernierScan     DateTime  @default(now())

@@ -110,14 +110,15 @@ function GraphePrix({ historique, prixInitial }) {
 
 const TYPE_EVT_LABEL = {
   creation: ['📥', 'Collectée'],
-  republication: ['🔁', 'Republiée'],
+  republication: ['♻️', 'Retrait/repositionnement (PAS une vente)'],
   baisse_prix: ['📉', 'Baisse de prix'],
   hausse_prix: ['📈', 'Hausse de prix'],
   tel_obtenu: ['📞', 'Téléphone obtenu'],
-  appel: ['☎️', 'Appel'],
+ appel: ['☎️', 'Appel'],
   note: ['📝', 'Note'],
   statut: ['🔄', 'Statut'],
   enlevement: ['🚫', 'Enlevée du site'],
+  sortie: ['🏁', 'Sortie définitive (vente probable)'],
 };
 
 const INDICE_LABEL = {
@@ -125,6 +126,13 @@ const INDICE_LABEL = {
   tiede: { txt: '🔔 Demande modérée', color: '#b45309', bg: '#fef3c7' },
   calme: { txt: '😴 Demande calme', color: '#475569', bg: '#eef1f6' },
   inconnu: { txt: '— En observation', color: '#64748b', bg: '#f1f5f9' },
+};
+
+/* Badge de sortie selon qualification (un retrait ≠ une vente) */
+const SORT_BADGE = {
+  vente_probable: { txt: '🏁 Vendu probable', bg: '#e8f7ef', color: '#0e9f6e' },
+  republiee: { txt: '♻️ Repositionnement prix', bg: '#fef3c7', color: '#b45309' },
+  en_attente: { txt: '⏳ Enlevée — attente qualification (14 j)', bg: '#f1f5f9', color: '#64748b' },
 };
 
 function jolifierZone(k) {
@@ -138,7 +146,7 @@ function TensionZones({ zones }) {
   if (!zones?.length) return null;
   return (
     <div className="card tension-card">
-      <h3>Vitesse de vente par zone <span className="muted" style={{ fontSize: 12, fontWeight: 400 }}>(temps médian entre publication et retrait de l'annonce = proxy de la demande)</span></h3>
+      <h3>Temps de vente par zone <span className="muted" style={{ fontSize: 12, fontWeight: 400 }}>(calculé sur les sorties définitives — un retrait avec republication n'est PAS compté comme une vente)</span></h3>
       <div className="tension-rows">
         {zones.map((z) => {
           const ind = INDICE_LABEL[z.indice] || INDICE_LABEL.inconnu;
@@ -157,9 +165,12 @@ function TensionZones({ zones }) {
           );
         })}
       </div>
-      <p className="muted" style={{ fontSize: 11.5, margin: '8px 2px 0' }}>
-        % = part des annonces enlevées en ≤ 10 jours. Une annonce est considérée enlevée après 3 scans consécutifs sans elle (garde-fou pagination inclus → indicateur précis, pas exhaustif).
-      </p>
+      <div className="tension-legende">
+        <span><b style={{ color: '#0e9f6e' }}>🏁 Sorties = ventes probables</b></span>
+        <span><b style={{ color: '#b45309' }}>♻️ Republican = repositionnement prix (exclu du calcul)</b></span>
+        <span><b style={{ color: '#64748b' }}>⏳ En attente</b></span>
+        <span className="muted">% = part sorties en ≤ 10 j · min. 5 sorties pour un indice · patience 14 j après retrait</span>
+      </div>
     </div>
   );
 }
@@ -175,8 +186,13 @@ function CarteAnnonce({ a, onOpen, onFavori }) {
   return (
     <div className={'annonce-card' + (a.enleve ? ' card-enleve' : '')} onClick={() => onOpen(a.id)}>
       {a.enleve && (
-        <span className="mini-badge enleve-badge">
+        <span className="mini-badge" style={{ background: SORT_BADGE[a.sort]?.bg || '#fdeeec', color: SORT_BADGE[a.sort]?.color || '#b91c1c', marginBottom: 4 }}>
           🚫 Enlevée {a.dateEnlevement ? new Date(a.dateEnlevement).toLocaleDateString('fr-FR') : ''}
+        </span>
+      )}
+      {a.enleve && a.sort && (
+        <span className="mini-badge" style={{ background: SORT_BADGE[a.sort]?.bg, color: SORT_BADGE[a.sort]?.color, marginBottom: 4 }}>
+          {SORT_BADGE[a.sort]?.txt}
         </span>
       )}
       {a.estFavori && <span className="ribbon ribbon-fav">★</span>}

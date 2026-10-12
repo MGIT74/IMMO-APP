@@ -181,13 +181,14 @@ export async function ingestItems(recherche, items) {
       maj++;
     } else {
       // Doublon par fingerprint ? (même bien reposté sous nouvelle URL)
-      let dupId = null;
+      let dup = null;
       if (mapped.fingerprint) {
-        const dup = await prisma.pigeAnnonce.findFirst({
+        dup = await prisma.pigeAnnonce.findFirst({
           where: { fingerprint: mapped.fingerprint, source: mapped.source },
+          orderBy: { createdAt: 'desc' },
         });
-        if (dup) dupId = dup.id;
       }
+      const dupId = dup?.id ?? null;
       annonce = await prisma.pigeAnnonce.create({
         data: {
           ...mapped,
@@ -204,16 +205,23 @@ export async function ingestItems(recherche, items) {
         await prisma.pigeAnnonce.update({ where: { id: annonce.id }, data: { prixInitial: mapped.prix } });
       }
       if (dupId) {
-        // Même bien reposté → incrémente le compteur de republication du précédent et journalise
-        const dup = await prisma.pigeAnnonce.update({
+        // Même bien reposté → le retrait précédent n'était PAS une vente :
+        // on requalifie (republiee), réactive, incrémente le compteur et journalise
+        await prisma.pigeAnnonce.update({
           where: { id: dupId },
-          data: { nbRepubs: { increment: 1 } },
+          data: {
+            nbRepubs: { increment: 1 },
+            sort: 'republiee',
+            ...(dup.enleve ? { enleve: false, dateEnlevement: undefined } : {}),
+          },
         });
         await prisma.pigeEvenement.create({
           data: {
             annonceId: dupId,
             type: 'republication',
-            detail: `Reposté sous une nouvelle URL : ${mapped.url ?? '(url inconnue)'} (nouvelle annonce id ${annonce.id})`,
+            detail: dup.enleve
+              ? `Retrait n'était PAS une vente : republissé sous nouvelle URL ${mapped.url ?? ''} (fiche id ${annonce.id})`
+              : `Reposté sous une nouvelle URL : ${mapped.url ?? '(url inconnue)'} (nouvelle annonce id ${annonce.id})`,
           },
         });
       }
@@ -244,7 +252,7 @@ export async function ingestItems(recherche, items) {
   if (zone && vusIds.size > 0) {
     const absentes = await prisma.pigeAnnonce.findMany({
       where: { zone, enleve: false, sourceId: { notIn: [...vusIds] } },
-      select: { id: true, dateParution: true, scansManques: true, createdAt: true },
+      select: { id: true, dateParution: true, scansManques: true, createdAt: true, fingerprint: true },
     });
     for (const c of absentes) {
       // Garde-fou pagination : l'actor renvoie les annonces triées du plus récent au plus ancien.
@@ -253,13 +261,28 @@ export async function ingestItems(recherche, items) {
       if (plusVieilleParutionVue && debut < plusVieilleParutionVue) continue;
       const manques = c.scansManques + 1;
       if (manques >= 3) {
+        // Un retrait ≠ une vente : le vendeur peut avoir retiré pour republicer (nouvelle URL).
+        // Si une autre annonce active existe déjà avec le même fingerprint → c'est une republication.
+        let repu = null;
+        if (c.fingerprint) {
+          repu = await prisma.pigeAnnonce.findFirst({
+            where: { fingerprint: c.fingerprint, enleve: false, id: { not: c.id } },
+            orderBy: { createdAt: 'desc' },
+          });
+        }
         await prisma.pigeAnnonce.update({
           where: { id: c.id },
-          data: { enleve: true, dateEnlevement: new Date(), scansManques: manques },
+          data: { enleve: true, dateEnlevement: new Date(), scansManques: manques, sort: repu ? 'republiee' : 'en_attente' },
         });
         const jours = Math.max(1, Math.round((Date.now() - debut) / 864e5));
         await prisma.pigeEvenement.create({
-          data: { annonceId: c.id, type: 'enlevement', detail: `Annonce enlevée du site (3 scans consécutifs sans elle) — en ligne ~${jours} j` },
+          data: {
+            annonceId: c.id,
+            type: 'enlevement',
+            detail: repu
+              ? `Annonce retirée puis republiée sous une autre fiche (id ${repu.id}) — probablement repositionnement de prix`
+              : `Annonce enlevée du site (3 scans consécutifs sans elle) — en ligne ~${jours} j`,
+          },
         });
       } else {
         await prisma.pigeAnnonce.update({ where: { id: c.id }, data: { scansManques: manques } });
@@ -270,6 +293,29 @@ export async function ingestItems(recherche, items) {
       where: { zone, sourceId: { in: [...vusIds] }, scansManques: { not: 0 } },
       data: { scansManques: 0 },
     });
+
+    // Qualification différée : les "en attente" enlevées depuis >= 14 j sans apparition d'une
+    // fiche au même fingerprint deviennent "vente_probable" (les republications auraient déjà
+    // re-déclenché le fingerprint). Aucun re-tri brouillon : règle stricte de patience.
+    const enAttente = await prisma.pigeAnnonce.findMany({
+      where: { enleve: true, sort: 'en_attente', dateEnlevement: { lt: new Date(Date.now() - 14 * 864e5) } },
+      select: { id: true, fingerprint: true },
+    });
+    for (const e of enAttente) {
+      const repuTardive = e.fingerprint
+        ? await prisma.pigeAnnonce.findFirst({
+            where: { fingerprint: e.fingerprint, enleve: false, id: { not: e.id } },
+          })
+        : null;
+      if (repuTardive) {
+        await prisma.pigeAnnonce.update({ where: { id: e.id }, data: { sort: 'republiee' } });
+      } else {
+        await prisma.pigeAnnonce.update({ where: { id: e.id }, data: { sort: 'vente_probable' } });
+        await prisma.pigeEvenement.create({
+          data: { annonceId: e.id, type: 'sortie', detail: 'Sortie définitive : jamais reparue dans les 14 j après retrait → vente probable' },
+        });
+      }
+    }
   }
 
   return { nouveaux, maj, telephones };
