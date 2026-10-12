@@ -44,12 +44,12 @@ pigeIngestRouter.post('/ingest', async (req, res) => {
   if (!process.env.PIGE_INGEST_SECRET || secret !== process.env.PIGE_INGEST_SECRET) {
     return res.status(401).json({ error: 'Secret invalide.' });
   }
-  const { source, items } = req.body ?? {};
+  const { source, items, zone } = req.body ?? {};
   if (!['leboncoin', 'seloger'].includes(source) || !Array.isArray(items)) {
     return res.status(400).json({ error: 'Body attendu : { source: "leboncoin"|"seloger", items: [...] }' });
   }
   try {
-    const stats = await ingestParSource(source, items);
+    const stats = await ingestParSource(source, items, zone ?? items[0]?._zone ?? null);
     res.json({ ok: true, ...stats });
   } catch (err) {
     res.status(500).json({ error: String(err.message ?? err) });
@@ -177,7 +177,7 @@ pigeAdminRouter.post('/recherches/:id/run', async (req, res) => {
 /* ---------- Annonces avec filtres ---------- */
 
 pigeAdminRouter.get('/annonces', async (req, res) => {
-  const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub, page = 1, perPage = 30 } = req.query;
+  const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub, depublie, page = 1, perPage = 30 } = req.query;
 
   const where = {
     ...(cp ? { cp: { startsWith: String(cp).slice(0, 2) } } : {}),
@@ -190,6 +190,7 @@ pigeAdminRouter.get('/annonces', async (req, res) => {
     ...(statut ? { statut: String(statut) } : {}),
     ...(favori === '1' ? { estFavori: true } : {}),
     ...(repub === '1' ? { nbRepubs: { gte: 1 } } : {}),
+    ...(depublie === '1' ? { enleve: true } : { enleve: false }),
     ...(prixMin || prixMax ? { prix: { ...(prixMin ? { gte: Number(prixMin) } : {}), ...(prixMax ? { lte: Number(prixMax) } : {}) } } : {}),
     ...(surfMin || surfMax ? { surface: { ...(surfMin ? { gte: Number(surfMin) } : {}), ...(surfMax ? { lte: Number(surfMax) } : {}) } } : {}),
     ...(q ? { OR: [{ titre: { contains: String(q) } }, { texte: { contains: String(q) } }, { ville: { contains: String(q) } }] } : {}),
@@ -235,6 +236,36 @@ pigeAdminRouter.get('/republications', async (req, res) => {
     take: 50,
   });
   res.json(repubs);
+});
+
+// Tension du marché par zone : vitesse d'enlèvement des annonces (proxy de la demande acheteur)
+pigeAdminRouter.get('/tension', async (req, res) => {
+  const rows = await prisma.pigeAnnonce.findMany({
+    where: { zone: { not: null } },
+    select: { zone: true, enleve: true, dateParution: true, dateEnlevement: true, createdAt: true },
+  });
+  const zones = {};
+  for (const r of rows) {
+    const z = (zones[r.zone] ??= { total: 0, actifs: 0, enlevees: 0, durees: [] });
+    z.total++;
+    if (r.enleve && r.dateEnlevement) {
+      z.enlevees++;
+      const debut = r.dateParution || r.createdAt;
+      const jours = Math.max(1, (r.dateEnlevement - debut) / 864e5);
+      if (jours <= 365) z.durees.push(jours);
+    } else {
+      z.actifs++;
+    }
+  }
+  const out = Object.entries(zones).map(([zone, z]) => {
+    const ds = z.durees.sort((a, b) => a - b);
+    const mediane = ds.length ? (ds.length % 2 ? ds[(ds.length - 1) / 2] : (ds[ds.length / 2 - 1] + ds[ds.length / 2]) / 2) : null;
+    const rapides = ds.filter((j) => j <= 10).length;
+    const pct = ds.length ? Math.round((100 * rapides) / ds.length) : null;
+    const indice = pct == null ? 'inconnu' : pct >= 40 ? 'chaud' : pct >= 15 ? 'tiede' : 'calme';
+    return { zone, total: z.total, actifs: z.actifs, enlevees: z.enlevees, medianeJours: mediane != null ? Math.round(mediane) : null, pctRapides: pct, indice };
+  }).sort((a, b) => (b.pctRapides ?? -1) - (a.pctRapides ?? -1));
+  res.json(out);
 });
 
 // Baisses de prix récentes (opportunités)

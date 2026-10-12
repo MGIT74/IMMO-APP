@@ -117,7 +117,52 @@ const TYPE_EVT_LABEL = {
   appel: ['☎️', 'Appel'],
   note: ['📝', 'Note'],
   statut: ['🔄', 'Statut'],
+  enlevement: ['🚫', 'Enlevée du site'],
 };
+
+const INDICE_LABEL = {
+  chaud: { txt: '🔥 Demande forte', color: '#e02d3c', bg: '#fdeeec' },
+  tiede: { txt: '🔔 Demande modérée', color: '#b45309', bg: '#fef3c7' },
+  calme: { txt: '😴 Demande calme', color: '#475569', bg: '#eef1f6' },
+  inconnu: { txt: '— En observation', color: '#64748b', bg: '#f1f5f9' },
+};
+
+function jolifierZone(k) {
+  if (!k) return '';
+  const petits = new Set(['de', 'du', 'en', 'les', 'la', 'le', 'au', 'aux', 'sur', 'sous']);
+  return k.split('-').map((w, i) => (i > 0 && petits.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join('-');
+}
+
+/* ---------- Carte tension du marché par zone ---------- */
+function TensionZones({ zones }) {
+  if (!zones?.length) return null;
+  return (
+    <div className="card tension-card">
+      <h3>Vitesse de vente par zone <span className="muted" style={{ fontSize: 12, fontWeight: 400 }}>(temps médian entre publication et retrait de l'annonce = proxy de la demande)</span></h3>
+      <div className="tension-rows">
+        {zones.map((z) => {
+          const ind = INDICE_LABEL[z.indice] || INDICE_LABEL.inconnu;
+          return (
+            <div key={z.zone} className="tension-row">
+              <div className="tension-zone"><b>{jolifierZone(z.zone)}</b><span className="muted">{z.actifs} en ligne · {z.total} collectées</span></div>
+              <div className="tension-bar-track">
+                <div className="tension-bar" style={{ width: `${Math.min(z.pctRapides ?? 0, 100)}%`, background: z.indice === 'chaud' ? '#e02d3c' : z.indice === 'tiede' ? '#f59e0b' : '#94a3b8' }}></div>
+              </div>
+              <div className="tension-metrics">
+                <b>{z.medianeJours != null ? `${z.medianeJours} j` : '—'}</b>
+                <span className="muted">médian</span>
+                <span className="tension-chip" style={{ background: ind.bg, color: ind.color }}>{ind.txt}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="muted" style={{ fontSize: 11.5, margin: '8px 2px 0' }}>
+        % = part des annonces enlevées en ≤ 10 jours. Une annonce est considérée enlevée après 3 scans consécutifs sans elle (garde-fou pagination inclus → indicateur précis, pas exhaustif).
+      </p>
+    </div>
+  );
+}
 
 /* ---------- Carte annonce (style Dribbble) ---------- */
 function CarteAnnonce({ a, onOpen, onFavori }) {
@@ -128,7 +173,12 @@ function CarteAnnonce({ a, onOpen, onFavori }) {
   const jourDepuisScan = a.dateDernierScan ? Math.floor((Date.now() - new Date(a.dateDernierScan)) / 864e5) : null;
 
   return (
-    <div className="annonce-card" onClick={() => onOpen(a.id)}>
+    <div className={'annonce-card' + (a.enleve ? ' card-enleve' : '')} onClick={() => onOpen(a.id)}>
+      {a.enleve && (
+        <span className="mini-badge enleve-badge">
+          🚫 Enlevée {a.dateEnlevement ? new Date(a.dateEnlevement).toLocaleDateString('fr-FR') : ''}
+        </span>
+      )}
       {a.estFavori && <span className="ribbon ribbon-fav">★</span>}
       <span className={'ribbon ' + (a.estNouveau ? 'ribbon-new' : 'ribbon-publi')}
         style={a.estNouveau ? { background: '#6366f1' } : info.color !== '#9ca3af' ? { background: info.color, opacity: .85 } : { background: '#cbd5e1' }}>
@@ -366,6 +416,7 @@ export default function Pige() {
   const [annonces, setAnnonces] = useState([]);
   const [recherches, setRecherches] = useState([]);
   const [stats, setStats] = useState(null);
+  const [tension, setTension] = useState(null);
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyRun, setBusyRun] = useState(null);
@@ -375,7 +426,7 @@ export default function Pige() {
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [filtres, setFiltres] = useState({ q: '', cp: '', prixMax: '', surfMin: '', trans: '', statut: '', avecTel: false, repub: false });
+  const [filtres, setFiltres] = useState({ q: '', cp: '', prixMax: '', surfMin: '', trans: '', statut: '', avecTel: false, repub: false, depublie: false });
   const [nouvelleRech, setNouvelleRech] = useState({ nom: '', location: 'Saint-Julien-en-Genevois', rayonKm: 20, adLimit: 100 });
   const [zoneCommunes, setZoneCommunes] = useState([]);
   const [zoneSelection, setZoneSelection] = useState([]);
@@ -393,19 +444,22 @@ export default function Pige() {
     if (filtres.statut) params.set('statut', filtres.statut);
     if (filtres.avecTel) params.set('avecTel', '1');
     if (filtres.repub) params.set('repub', '1');
+    if (filtres.depublie) params.set('depublie', '1');
     params.set('page', String(pageArgs));
     params.set('perPage', String(perPage));
     const data = await api.get(`/api/admin/pige/annonces?${params.toString()}`);
     setAnnonces((data && data.annonces) || []);
     setTotal(data?.total || 0);
-    const [r, s, runsData] = await Promise.all([
+    const [r, s, runsData, tensData] = await Promise.all([
       api.get('/api/admin/pige/recherches'),
       api.get('/api/admin/pige/stats'),
       api.get('/api/admin/pige/runs'),
+      api.get('/api/admin/pige/tension'),
     ]);
     setRecherches(r || []);
     setStats(s);
     setRuns((runsData || []).slice(0, 8));
+    setTension(tensData || []);
     setLoading(false);
   }
 
@@ -612,8 +666,11 @@ export default function Pige() {
         </div>
       )}
 
+      {/* Tension du marché par zone */}
+      {!filtres.depublie && <TensionZones zones={tension} />}
+
       {/* Pipeline cliquable */}
-      {stats?.parStatut && (
+      {stats?.parStatut && !filtres.depublie && (
         <div className="pige-pipeline">
           {STATUTS.map((s) => (
             <button key={s.key} className={'pige-pipe-btn' + (filtres.statut === s.key ? ' active' : '')}
@@ -713,6 +770,7 @@ export default function Pige() {
         </select>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.avecTel} onChange={(e) => setFiltres({ ...filtres, avecTel: e.target.checked })} /> Avec tél.</label>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.repub} onChange={(e) => setFiltres({ ...filtres, repub: e.target.checked })} /> Republiées</label>
+        <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.depublie} onChange={(e) => { setFiltres({ ...filtres, depublie: e.target.checked }); setPage(1); }} /> 🚫 Enlevées</label>
         <button onClick={appliquerFiltres}>Appliquer</button>
       </div>
 

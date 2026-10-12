@@ -208,6 +208,11 @@ model PigeAnnonce {
   noteMemo            String?   @db.Text // mémo libre de l'agent
   estFavori           Boolean   @default(false)
   rappelAt            DateTime? // rappel planifié (optionnel)
+  // Zone de collecte (clé normalisée : sans accents/casse, ex "annemasse") + détection d'enlèvement
+  zone                String?
+  enleve              Boolean   @default(false) // annonce disparue des scans
+  dateEnlevement      DateTime?
+  scansManques        Int       @default(0) // scans consécutifs où l'annonce était absente (>=3 → enlevée)
   // Suivi
   estNouveau          Boolean   @default(true)
   dateDernierScan     DateTime  @default(now())
@@ -225,6 +230,7 @@ model PigeAnnonce {
   @@index([dateParution])
   @@index([statut])
   @@index([fingerprint])
+  @@index([zone])
 }
 
 // Journal des événements de vie de l'annonce (nouveau, republication, baisse de prix, appel...)

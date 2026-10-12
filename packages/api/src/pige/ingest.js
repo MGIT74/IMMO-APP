@@ -9,6 +9,17 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Clé de zone normalisée : minuscule, sans accents (ex "Évian-les-Bains 74500" → "evian-les-bains") */
+export function normaliserZone(s) {
+  const base = String(s ?? '').replace(/\s*\d{5}.*$/, '').trim();
+  if (!base) return null;
+  return base
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
 /**
  * Fingerprint : même bien reposté = même type+cp+ville+surface±3 + prix±2%.
  * Pas parfait, mais arrête 90 % des doublons Leboncoin.
@@ -50,6 +61,7 @@ function mapLeboncoin(item) {
     photoUrl: (Array.isArray(item.images) && item.images[0]) || item.images?.thumb_url || item.images?.large_url || null,
     photosJson: item.images ?? null,
     dateParution: firstPub,
+    zone: item._zone ?? null, // transmis par le workflow n8n (ville de la zone scannée)
     // Contact
     _contact: {
       nom: item.seller_name ?? item.owner?.name ?? null,
@@ -103,6 +115,12 @@ export async function ingestItems(recherche, items) {
   let maj = 0;
   let telephones = 0;
 
+  // Zone du scan : clé normalisée (pour détecter les disparitions par zone)
+  const zone = normaliserZone(recherche._zone ?? null);
+  // Ensemble des annonces vues DANS ce scan (pour la détection d'enlèvement)
+  const vusIds = new Set();
+  let plusVieilleParutionVue = null;
+
   for (const raw of items) {
     const mapped = mapper(raw);
     if (!mapped.url) continue;
@@ -111,6 +129,11 @@ export async function ingestItems(recherche, items) {
     const sellerType = raw.seller_type ?? raw.seller?.type ?? null;
     if (sellerType && !/private|particul/i.test(String(sellerType))) continue;
 
+    mapped.zone = zone;
+    if (mapped.sourceId) vusIds.add(mapped.sourceId);
+    if (mapped.dateParution && (!plusVieilleParutionVue || mapped.dateParution < plusVieilleParutionVue)) {
+      plusVieilleParutionVue = mapped.dateParution;
+    }
     mapped.fingerprint = fingerprint(mapped);
 
     const existing = await prisma.pigeAnnonce.findUnique({
@@ -129,6 +152,8 @@ export async function ingestItems(recherche, items) {
           dateDernierScan: new Date(),
           estNouveau: false,
           rechercheId: existing.rechercheId ?? recherche.id,
+          // Une annonce revue ne peut pas être enlevée : réactivons si besoin
+          ...(zone && (existing.zone !== zone || existing.enleve) ? { zone, enleve: false, scansManques: 0 } : {}),
         },
       });
       // Contact réessayé à chaque scan : si le numéro apparaît maintenant, on le stocke
@@ -215,6 +240,38 @@ export async function ingestItems(recherche, items) {
     }
   }
 
+  // ---------- Détection d'enlèvement (vitesse de vente) ----------
+  if (zone && vusIds.size > 0) {
+    const absentes = await prisma.pigeAnnonce.findMany({
+      where: { zone, enleve: false, sourceId: { notIn: [...vusIds] } },
+      select: { id: true, dateParution: true, scansManques: true, createdAt: true },
+    });
+    for (const c of absentes) {
+      // Garde-fou pagination : l'actor renvoie les annonces triées du plus récent au plus ancien.
+      // Une annonce PLUS VIEILLE que la plus ancienne de ce scan peut simplement être page 2+ → on ne compte pas.
+      const debut = c.dateParution || c.createdAt;
+      if (plusVieilleParutionVue && debut < plusVieilleParutionVue) continue;
+      const manques = c.scansManques + 1;
+      if (manques >= 3) {
+        await prisma.pigeAnnonce.update({
+          where: { id: c.id },
+          data: { enleve: true, dateEnlevement: new Date(), scansManques: manques },
+        });
+        const jours = Math.max(1, Math.round((Date.now() - debut) / 864e5));
+        await prisma.pigeEvenement.create({
+          data: { annonceId: c.id, type: 'enlevement', detail: `Annonce enlevée du site (3 scans consécutifs sans elle) — en ligne ~${jours} j` },
+        });
+      } else {
+        await prisma.pigeAnnonce.update({ where: { id: c.id }, data: { scansManques: manques } });
+      }
+    }
+    // Les vues repartent à zéro
+    await prisma.pigeAnnonce.updateMany({
+      where: { zone, sourceId: { in: [...vusIds] }, scansManques: { not: 0 } },
+      data: { scansManques: 0 },
+    });
+  }
+
   return { nouveaux, maj, telephones };
 }
 
@@ -223,8 +280,8 @@ export async function ingestItems(recherche, items) {
  * recherche à l'avance, on ingest tout dans la base globale (rechercheId null).
  * Retourne les stats agrégées.
  */
-export async function ingestParSource(source, items) {
-  const fakeRecherche = { id: null, source, apifyInput: {} };
+export async function ingestParSource(source, items, zoneRaw = null) {
+  const fakeRecherche = { id: null, source, apifyInput: {}, _zone: zoneRaw };
   return ingestItems(fakeRecherche, items);
 }
 
@@ -240,7 +297,9 @@ export async function executerRecherche(rechercheId) {
 
   try {
     const { apifyRunId, items, usageTotalUsd } = await runActor(recherche);
-    const stats = await ingestItems(recherche, items);
+    // Zone pour la détection d'enlèvement : la "location" de la recherche (ex "Annemasse 74100")
+    const rechercheAvecZone = { ...recherche, _zone: recherche.apifyInput?.location ?? recherche.nom };
+    const stats = await ingestItems(rechercheAvecZone, items);
 
     await prisma.pigeRun.update({
       where: { id: runRow.id },
