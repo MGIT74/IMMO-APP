@@ -356,8 +356,9 @@ export async function executerRecherche(rechercheId) {
 
   try {
     const { apifyRunId, items, usageTotalUsd } = await runActor(recherche);
-    // Zone pour la détection d'enlèvement : la "location" de la recherche (ex "Annemasse 74100")
-    const rechercheAvecZone = { ...recherche, _zone: recherche.apifyInput?.location ?? recherche.nom };
+    // Zone pour la détection d'enlèvement : city/location de la recherche (ex "Annemasse 74100")
+    const cfg = recherche.apifyInput ?? {};
+    const rechercheAvecZone = { ...recherche, _zone: cfg.city ?? cfg.location ?? recherche.nom };
     const stats = await ingestItems(rechercheAvecZone, items);
 
     await prisma.pigeRun.update({

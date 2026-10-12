@@ -8,35 +8,37 @@ function getClient() {
 }
 
 // Actors du Store Apify (pay-per-event, voir README pige pour les tarifs)
+// leboncoin → mostafa-ennadi : révèle les numéros de téléphone sans compte Leboncoin
+// (input : city, owner_type, only_with_phone, max_pages, max_items)
 export const ACTORS = {
-  leboncoin: 'clearpath/leboncoin-immobilier',
+  leboncoin: 'mostafa-ennadi/leboncoin-immobilier-phone-leads-scraper',
   seloger: 'lexis-solutions/seloger-scraper',
 };
 
 /**
  * Construit l'input d'actor selon la source.
- * recherche.apifyInput contient les critères bruts (déjà au format actor).
- * On force toujours : particuliers uniquement / téléphones si possible.
+ * recherche.apifyInput contient les critères bruts — les anciens formats
+ * (clearpath : location/adLimit/communes) sont traduits vers le schéma de l'actor.
  */
 export function buildActorInput(recherche) {
-  const base = { ...(recherche.apifyInput || {}) };
+  const cfg = recherche.apifyInput || {};
 
   if (recherche.source === 'leboncoin') {
-    // seller_type=private → particuliers ; includePhone → numéros (+$9.99/1k)
     return {
-      immobilierCategory: '9',
-      includeSeller: false,
-      seller_type: 'private',
-      includePhone: true,
-      adLimit: 200,
-      ...base,
+      city: cfg.city ?? cfg.centre ?? cfg.location ?? 'Paris',
+      owner_type: 'private',
+      // only_with_phone FALSE : on garde TOUTES les annonces (CRM complet) ;
+      // les numéros trouvés sont révélés de toute façon — sinon le tracking
+      // d'enlèvement serait faussé (annonce sans numéro = absente du scan à tort)
+      only_with_phone: false,
+      max_pages: Number(cfg.max_pages) || 1,
+      max_items: Number(cfg.max_items ?? cfg.adLimit) || 50,
     };
   }
 
   if (recherche.source === 'seloger') {
     // actor SeLoger : le champ exact dépend du build courant — voir .md de l'actor.
-    // On garde apifyInput maître, on n'écrase que le strict nécessaire.
-    return { ...base, adLimit: 200, ...(base.maxItems ? {} : { maxItems: 200 }) };
+    return { ...cfg, maxItems: Number(cfg.maxItems || cfg.adLimit) || 200 };
   }
 
   throw new Error(`Source inconnue : ${recherche.source}`);
@@ -50,10 +52,7 @@ export async function runActor(recherche) {
   const actorId = ACTORS[recherche.source];
   const input = buildActorInput(recherche);
 
-  // maxItems plafonne la facturation pay-per-result côté Apify
-  const callOptions = { maxItems: input.adLimit || 200 };
-
-  const run = await client.actor(actorId).call(input, callOptions);
+  const run = await client.actor(actorId).call(input, { maxItems: input.max_items || 200 });
 
   const { items } = await client.dataset(run.defaultDatasetId).listItems();
   return { apifyRunId: run.id, items, usageTotalUsd: run.usageTotalUsd ?? null };
