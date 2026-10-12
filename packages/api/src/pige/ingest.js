@@ -77,7 +77,7 @@ function mapLeboncoin(item) {
     // Contact
     _contact: {
       nom: item.seller_name ?? item.owner?.name ?? item.owner_name ?? null,
-      telephone: item.phone ?? item.phonenumber ?? null,
+      telephone: (item.phone ?? item.phonenumber) || null,
       // has_phone = le numéro existe sur Leboncoin mais n'a pas pu être révélé
       // (quota de révélations du compte LBC épuisé, 2FA...) → réessayable au prochain run
       telStatut: (item.phone ?? item.phonenumber) ? 'disponible' : (item.has_phone ? 'non_revele' : 'indisponible'),
@@ -246,12 +246,13 @@ export async function ingestItems(recherche, items) {
     // Contact (téléphone etc.) — ne jamais écraser un numéro déjà obtenu par null
     if (mapped._contact) {
       const prev = await prisma.pigeContact.findUnique({ where: { annonceId: annonce.id } });
+      const tel = (mapped._contact.telephone ?? prev?.telephone) || null;
       const data = {
         nom: mapped._contact.nom ?? prev?.nom,
-        telephone: mapped._contact.telephone ?? prev?.telephone,
-        telStatut: mapped._contact.telephone ? 'disponible' : (prev?.telephone ? 'disponible' : mapped._contact.telStatut),
+        telephone: tel,
+        telStatut: tel ? 'disponible' : mapped._contact.telStatut,
       };
-      if (data.telephone && !prev?.telephone) telephones++;
+      if (tel && !prev?.telephone) telephones++;
       await prisma.pigeContact.upsert({
         where: { annonceId: annonce.id },
         update: data,
