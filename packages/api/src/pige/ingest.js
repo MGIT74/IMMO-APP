@@ -34,8 +34,19 @@ function fingerprint(a) {
 /* ---------- Mappers par source ---------- */
 
 // Sortie de l'actor clearpath/leboncoin-immobilier (README Apify)
+// ET de l'actor mostafa-ennadi/leboncoin-immobilier-phone-leads-scraper (champs différents) — les deux sont gérés
 function mapLeboncoin(item) {
   const firstPub = item.first_publication_date ? new Date(item.first_publication_date) : null;
+  // furnished : "1"/true → meublé ; "2"/false/""/null → pas d'info fiable (Boolean seulement)
+  let meuble = null;
+  if (typeof item.furnished === 'boolean') meuble = item.furnished;
+  else if (typeof item.furnished === 'string') {
+    const f = item.furnished.trim().toLowerCase();
+    if (f === '1' || f === 'true') meuble = true;
+    else if (f === '2' || f === 'false') meuble = false;
+  }
+  const dpeClean = item.energy_rate ? String(item.energy_rate).toUpperCase().trim().slice(0, 2) : null;
+  const gesClean = item.ges ? String(item.ges).toUpperCase().trim().slice(0, 2) : null;
   return {
     source: 'leboncoin',
     sourceId: item.list_id != null ? String(item.list_id) : null,
@@ -48,11 +59,12 @@ function mapLeboncoin(item) {
     surface: num(item.square),
     pieces: item.rooms != null ? Number(item.rooms) : null,
     chambres: item.bedrooms != null ? Number(item.bedrooms) : null,
-    dpe: item.energy_rate ?? null,
-    ges: item.ges ?? null,
-    exterieur: Array.isArray(item.outdoor) ? item.outdoor.join(',') : null,
+    dpe: dpeClean,
+    ges: gesClean,
+    exterieur: (Array.isArray(item.outdoor) ? item.outdoor.join(',') : null)
+      ?? (Array.isArray(item.outside_access) ? String(item.outside_access).slice(0, 250) : null),
     etage: item.floor_property ?? null,
-    meuble: item.furnished ?? null,
+    meuble,
     cp: item.zipcode ?? (item.location && item.location.zipcode) ?? null,
     ville: item.city ?? (item.location && item.location.city) ?? null,
     dept: item.department_name ?? null,
@@ -64,11 +76,11 @@ function mapLeboncoin(item) {
     zone: item._zone ?? null, // transmis par le workflow n8n (ville de la zone scannée)
     // Contact
     _contact: {
-      nom: item.seller_name ?? item.owner?.name ?? null,
-      telephone: item.phone ?? null,
+      nom: item.seller_name ?? item.owner?.name ?? item.owner_name ?? null,
+      telephone: item.phone ?? item.phonenumber ?? null,
       // has_phone = le numéro existe sur Leboncoin mais n'a pas pu être révélé
       // (quota de révélations du compte LBC épuisé, 2FA...) → réessayable au prochain run
-      telStatut: item.phone ? 'disponible' : (item.has_phone ? 'non_revele' : 'indisponible'),
+      telStatut: (item.phone ?? item.phonenumber) ? 'disponible' : (item.has_phone ? 'non_revele' : 'indisponible'),
     },
   };
 }
