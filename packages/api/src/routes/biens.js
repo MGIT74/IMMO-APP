@@ -15,8 +15,14 @@ const includeRelations = {
 
 // --- PUBLIC : liste des biens publiés (pour le site vitrine Astro) ---
 biensPublicRouter.get('/', async (req, res) => {
+  const { categorie, type, ville } = req.query;
   const biens = await prisma.bien.findMany({
-    where: { publie: true },
+    where: {
+      publie: true,
+      ...(categorie && ['neuf', 'ancien'].includes(String(categorie)) ? { categorie: String(categorie) } : {}),
+      ...(type ? { type: { contains: String(type) } } : {}),
+      ...(ville ? { ville: { contains: String(ville) } } : {}),
+    },
     include: includeRelations,
     orderBy: { createdAt: 'desc' },
   });
@@ -143,7 +149,7 @@ biensAdminRouter.patch('/:id/publie', async (req, res) => {
 
 function pickBienFields(body) {
   const allowed = [
-    'titre', 'type', 'prix', 'ville', 'codePostal', 'surface', 'pieces', 'chambres',
+    'titre', 'type', 'categorie', 'prix', 'ville', 'codePostal', 'surface', 'pieces', 'chambres',
     'etatTexte', 'etatCouleur', 'etatAnim', 'livraison', 'vendu', 'publie', 'luxe', 'description',
     'tauxPerso', 'boutonTexte', 'boutonUrl', 'videoUrl',
     'dpeLettre', 'dpeValeur', 'gesLettre', 'gesValeur', 'dpeDate',
@@ -154,7 +160,9 @@ function pickBienFields(body) {
   for (const key of allowed) {
     if (body[key] !== undefined) data[key] = body[key];
   }
-  if (body.equipements !== undefined) {
+  // categorie : valeur contrôlée (neuf | ancien)
+  if (data.categorie !== undefined && !['neuf', 'ancien'].includes(data.categorie)) data.categorie = 'ancien';
+  if (data.equipements !== undefined) {
     data.equipements = body.equipements;
   }
   return data;

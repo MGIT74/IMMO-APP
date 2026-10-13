@@ -127,6 +127,8 @@ button.danger { background: #e53935; }
 .badge-red { background: #fdecea; color: #e53935; }
 .badge-grey { background: #f0f0ee; color: #888; }
 .badge-gold { background: #1a1a1a; color: #f0c96b; }
+.badge-new { background: #e3f2fd; color: #1565c0; }
+.badge-ancien { background: #ede7f6; color: #5e35b1; }
 
 .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
 .login-card { background: #fff; padding: 32px; border-radius: 16px; width: 320px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }

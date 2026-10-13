@@ -120,7 +120,10 @@ body {
 .immo-hero-dots button.is-active { background: #fff; }
 
 .immo-body { padding: 20px; }
-.immo-type { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+.immo-type { font-size: 18px; font-weight: 600; margin-bottom: 12px; display: flex; gap: 10px; align-items: center; }
+.immo-categorie { font-size: 12px; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
+.immo-categorie.is-neuf { background: #e3f2fd; color: #1565c0; }
+.immo-categorie.is-ancien { background: #ede7f6; color: #5e35b1; }
 .immo-stats { background: var(--immo-bg); border-radius: 16px; padding: 14px 18px; display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; font-size: 14px; }
 .immo-equip-list { display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
 

@@ -74,7 +74,7 @@ export default function Biens() {
                       )}
                       <div>
                         <Link to={`/biens/${bien.id}/edit`}><strong>{bien.titre}</strong></Link>
-                        <div className="muted">{bien.ville}{bien.type ? ` · ${bien.type}` : ''}</div>
+                        <div className="muted">{bien.ville}{bien.type ? ` · ${bien.type}` : ''}{bien.categorie ? ` · ${bien.categorie === 'neuf' ? 'Neuf' : 'Ancien'}` : ''}</div>
                       </div>
                     </div>
                   </td>
@@ -88,7 +88,8 @@ export default function Biens() {
                     {bien.vendu && <span className="badge badge-red">Vendu</span>}
                     {!bien.publie && <span className="badge badge-grey">Masqué</span>}
                     {bien.luxe && <span className="badge badge-gold">✨ Luxe</span>}
-                    {!bien.vendu && bien.publie && !bien.luxe && <span className="badge badge-grey">—</span>}
+                    {bien.categorie === 'neuf' && <span className="badge badge-new">Neuf</span>}
+                    {bien.categorie === 'ancien' && <span className="badge badge-ancien">Ancien</span>}
                   </td>
                   <td className="actions">
                     <button onClick={() => handleToggleVendu(bien.id)}>{bien.vendu ? '✓ Vendu' : 'Marquer vendu'}</button>

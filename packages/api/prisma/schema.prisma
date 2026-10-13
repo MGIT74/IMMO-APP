@@ -20,6 +20,7 @@ model Bien {
   id         Int     @id @default(autoincrement())
   titre      String // nom de la résidence, ex "Perle du lac"
   type       String? // Appartement, Maison, Studio...
+  categorie  String  @default("ancien") // "neuf" (jamais habité) | "ancien" (déjà habité / revente)
   prix       Float   @default(0)
   ville      String?
   codePostal String?

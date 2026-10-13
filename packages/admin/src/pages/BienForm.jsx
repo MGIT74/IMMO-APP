@@ -4,7 +4,7 @@ import { api } from '../lib/api.js';
 import { ICON_LABELS, formatEquip, hasValueField } from '../lib/equipements.js';
 
 const emptyBien = {
-  titre: '', type: 'Appartement', prix: '', ville: '', codePostal: '',
+  titre: '', type: 'Appartement', categorie: 'ancien', prix: '', ville: '', codePostal: '',
   surface: '', pieces: '', chambres: '',
   etatTexte: '', etatCouleur: '#43a047', etatAnim: 'none', livraison: '',
   tauxPerso: '', boutonTexte: '', boutonUrl: '', luxe: false, description: '', videoUrl: '',
@@ -185,6 +185,10 @@ export default function BienForm() {
               <option>Terrain</option>
               <option>Local commercial</option>
               <option>Parking</option>
+            </select>
+            <select value={bien.categorie || 'ancien'} onChange={(e) => updateField('categorie', e.target.value)}>
+              <option value="neuf">🏠 Neuf (jamais habité)</option>
+              <option value="ancien">✅ Ancien (déjà habité)</option>
             </select>
             <input type="number" placeholder="Prix (€)" value={bien.prix} onChange={(e) => updateField('prix', e.target.value)} required />
             <input placeholder="Ville" value={bien.ville} onChange={(e) => updateField('ville', e.target.value)} />

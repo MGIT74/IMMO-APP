@@ -33,7 +33,10 @@ const badgeAnim = bien.vendu ? '' : (bien.etatAnim === 'blink' ? 'is-blink' : bi
 	</div>
 
 	<div class="immo-body">
-		{bien.type && <div class="immo-type">{bien.type}</div>}
+		<div class="immo-type">
+			{bien.type && <span>{bien.type}</span>}
+			{bien.categorie && <span class:list={["immo-categorie", bien.categorie === 'neuf' ? 'is-neuf' : 'is-ancien']}>{bien.categorie === 'neuf' ? 'Neuf' : 'Ancien'}</span>}
+		</div>
 		<div class="immo-stats">
 			{bien.surface && <span>📐 {bien.surface} m²</span>}
 			{bien.pieces && <span>🚪 {bien.pieces} pièces</span>}
