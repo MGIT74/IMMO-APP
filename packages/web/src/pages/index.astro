@@ -9,7 +9,7 @@ const biens = await getBiens();
 	title="Vendre votre bien à Saint-Julien-en-Genevois à 2% — Ambassadeur Immo"
 	description="Ambassadeur immobilier à Saint-Julien-en-Genevois, Annemasse, Viry. Vendez à 2% d'honoraires avec Bkeys. Eric — 06 60 56 02 00."
 >
-	<!-- Hero style LUXEVIA : clair, titre serif, badge, recherche blanche + bandeau sombre de stats -->
+	<!-- Hero style LUXEVIA : clair, titre serif, badge, CTAs -->
 	<section id="accueil" class="hero-luxe" style="background-image:url('https://ambassadeur-immo.com/wp-content/uploads/2026/08/photo-villa-home-blanc.jpg');">
 		<div class="hero-luxe-overlay"></div>
 		<div class="hero-luxe-inner">
@@ -26,31 +26,6 @@ const biens = await getBiens();
 			</div>
 		</div>
 	</section>
-
-	<div class="hero-searchband">
-		<!-- Bandeau sombre de chiffres clés -->
-		<div class="stats-strip">
-			<div class="strip-stat">
-				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4.5 20 11"/><path d="M6.5 10.2V19h11v-8.8"/><path d="M10 19v-4.5h4V19"/></svg></span>
-				<div><b>{biens.filter((b) => b.publie && !b.vendu).length || biens.length}+</b> <span>Biens en vente</span></div>
-			</div>
-			<div class="strip-sep"></div>
-			<div class="strip-stat">
-				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="19" cy="5" r="2.2"/><path d="M5 19 19 5"/><path d="M7.5 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5ZM16.5 19.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg></span>
-				<div><b>2 %</b> <span>Honoraires</span></div>
-			</div>
-			<div class="strip-sep"></div>
-			<div class="strip-stat">
-				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
-				<div><b>8+</b> <span>Communes Genevois & Chablais</span></div>
-			</div>
-			<div class="strip-sep"></div>
-			<div class="strip-stat">
-				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4.5L8 10a13 13 0 0 0 6 6l1.5-2.5L20 15v4a1.5 1.5 0 0 1-1.6 1.5C9.6 19.9 4.1 14.4 3.5 5.6A1.5 1.5 0 0 1 5 4Z"/></svg></span>
-				<div><b>06 60 56 02 00</b> <span>Éric, votre ambassadeur local</span></div>
-			</div>
-		</div>
-	</div>
 
 	<!-- À propos -->
 	<section id="pourquoi-moi" class="section about">
