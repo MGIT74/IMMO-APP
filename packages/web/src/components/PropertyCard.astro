@@ -11,7 +11,7 @@ const ICONS = {
 };
 ---
 
-<a href={`/biens/${bien.id}`} class="immo-card" data-type={bien.type} data-categorie={bien.categorie} data-ville={bien.ville}>
+<a href={`/biens/${bien.id}`} class="immo-card" data-type={bien.type} data-categorie={bien.categorie} data-ville={bien.ville} data-chambres={bien.chambres || 0}>
 	<div class="immo-hero">
 		{photo ? <img src={photo} alt={bien.titre} /> : null}
 		<div class="immo-hero-shade immo-hero-shade-top"></div>

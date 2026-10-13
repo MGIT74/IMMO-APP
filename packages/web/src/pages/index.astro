@@ -9,67 +9,97 @@ const biens = await getBiens();
 	title="Vendre votre bien à Saint-Julien-en-Genevois à 2% — Ambassadeur Immo"
 	description="Ambassadeur immobilier à Saint-Julien-en-Genevois, Annemasse, Viry. Vendez à 2% d'honoraires avec Bkeys. Eric — 06 60 56 02 00."
 >
-	<!-- Hero style Zeno : photo pleine page, wordmark géant, recherche en verre dépoli -->
-	<section id="accueil" class="hero hero-zeno" style="background-image:url('https://ambassadeur-immo.com/wp-content/uploads/2026/08/photo-villa-home-blanc.jpg');">
-		<div class="hero-overlay hero-overlay-zeno"></div>
-		<div class="hero-inner">
-			<div class="hero-topline">
-				<span>© 2026</span>
-				<span>Saint-Julien · Annemasse · Thonon · Évian</span>
+	<!-- Hero style LUXEVIA : clair, titre serif, badge, recherche blanche + bandeau sombre de stats -->
+	<section id="accueil" class="hero-luxe" style="background-image:url('https://ambassadeur-immo.com/wp-content/uploads/2026/08/photo-villa-home-blanc.jpg');">
+		<div class="hero-luxe-overlay"></div>
+		<div class="hero-luxe-inner">
+			<span class="hero-luxe-badge"><span class="dot"></span>L'immobilier à 2 % d'honoraires</span>
+			<h1 class="hero-luxe-titre">Trouvez votre<br /><em>bien idéal</em></h1>
+			<p class="hero-luxe-pitch">
+				Biens sélectionnés à Saint-Julien, Annemasse, Thonon et alentours.<br />
+				Estimation Bkeys, diffusion réseau national, visites accompagnées —<br class="only-desktop" />
+				vous restez maître de votre vente.
+			</p>
+			<div class="hero-luxe-cta">
+				<a href="#nos-biens" class="cta-dark">Voir nos biens <span class="cta-arrow">→</span></a>
+				<a href="#contact" class="cta-ghost"><span class="cta-play">▸</span>Contactez-moi</a>
 			</div>
-			<div class="hero-wordmark">Ambass<span class="wordmark-soft">adeur</span></div>
-			<div class="hero-bottom-row">
-				<p class="hero-pitch">
-					Un <strong>ambassadeur immobilier local</strong> à 2 % d'honoraires : estimation Bkeys,
-					diffusion sur le réseau national, visites accompagnées, suivi jusqu'à la signature —
-					vous restez maître de votre vente.
-				</p>
-				<a href="#contact" class="btn-glass-pill btn-glass-contact">Contactez-moi</a>
-			</div>
-
-			<!-- Recherche en verre dépoli -->
-			<form id="hero-search" class="glass-search" autocomplete="off">
-				<div class="glass-search-title">Trouvez votre bien idéal</div>
-				<div class="glass-search-row">
-					<div class="glass-field">
-						<label for="gs-type">Type de bien</label>
-						<select id="gs-type">
-							<option value="">Tous les types</option>
-							<option value="Appartement">Appartement</option>
-							<option value="Maison">Maison</option>
-							<option value="Studio">Studio</option>
-							<option value="Terrain">Terrain</option>
-							<option value="Local commercial">Local commercial</option>
-							<option value="Parking">Parking</option>
-						</select>
-					</div>
-					<div class="glass-field">
-						<label for="gs-categ">Catégorie</label>
-						<select id="gs-categ">
-							<option value="">Neuf & Ancien</option>
-							<option value="neuf">Neuf (jamais habité)</option>
-							<option value="ancien">Ancien (déjà habité)</option>
-						</select>
-					</div>
-					<div class="glass-field">
-						<label for="gs-zone">Zone</label>
-						<select id="gs-zone">
-							<option value="">Toutes les zones</option>
-							<option value="Saint-Julien">Saint-Julien-en-Genevois</option>
-							<option value="Annemasse">Annemasse</option>
-							<option value="Viry">Viry</option>
-							<option value="Thonon">Thonon-les-Bains</option>
-							<option value="Évian">Évian-les-Bains</option>
-							<option value="Collonges">Collonges-sous-Salève</option>
-							<option value="Gaillard">Gaillard</option>
-							<option value="Valleiry">Valleiry</option>
-						</select>
-					</div>
-					<button type="submit" class="glass-search-btn">Rechercher</button>
-				</div>
-			</form>
 		</div>
 	</section>
+
+	<div class="hero-searchband">
+		<!-- Barre de recherche blanche -->
+		<form id="hero-search" class="search-bar" autocomplete="off">
+			<div class="search-cell search-cell-lead">
+				<label for="gs-zone">Zone</label>
+				<select id="gs-zone">
+					<option value="">Toute la région</option>
+					<option value="Saint-Julien">Saint-Julien-en-Genevois</option>
+					<option value="Annemasse">Annemasse</option>
+					<option value="Viry">Viry</option>
+					<option value="Thonon">Thonon-les-Bains</option>
+					<option value="Évian">Évian-les-Bains</option>
+					<option value="Collonges">Collonges-sous-Salève</option>
+					<option value="Gaillard">Gaillard</option>
+					<option value="Valleiry">Valleiry</option>
+				</select>
+			</div>
+			<div class="search-cell">
+				<label for="gs-type">Type de bien</label>
+				<select id="gs-type">
+					<option value="">Tous types</option>
+					<option value="Appartement">Appartement</option>
+					<option value="Maison">Maison</option>
+					<option value="Studio">Studio</option>
+					<option value="Terrain">Terrain</option>
+					<option value="Local commercial">Local commercial</option>
+					<option value="Parking">Parking</option>
+				</select>
+			</div>
+			<div class="search-cell">
+				<label for="gs-categ">Catégorie</label>
+				<select id="gs-categ">
+					<option value="">Neuf & Ancien</option>
+					<option value="neuf">Neuf (jamais habité)</option>
+					<option value="ancien">Ancien (déjà habité)</option>
+				</select>
+			</div>
+			<div class="search-cell">
+				<label for="gs-chambres">Chambres</label>
+				<select id="gs-chambres">
+					<option value="">Toutes</option>
+					<option value="1">1+</option>
+					<option value="2">2+</option>
+					<option value="3">3+</option>
+					<option value="4">4+</option>
+				</select>
+			</div>
+			<button type="submit" class="search-btn">Rechercher <span class="cta-arrow">→</span></button>
+		</form>
+
+		<!-- Bandeau sombre de chiffres clés -->
+		<div class="stats-strip">
+			<div class="strip-stat">
+				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4.5 20 11"/><path d="M6.5 10.2V19h11v-8.8"/><path d="M10 19v-4.5h4V19"/></svg></span>
+				<div><b>{biens.filter((b) => b.publie && !b.vendu).length || biens.length}+</b> <span>Biens en vente</span></div>
+			</div>
+			<div class="strip-sep"></div>
+			<div class="strip-stat">
+				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="19" cy="5" r="2.2"/><path d="M5 19 19 5"/><path d="M7.5 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5ZM16.5 19.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg></span>
+				<div><b>2 %</b> <span>Honoraires</span></div>
+			</div>
+			<div class="strip-sep"></div>
+			<div class="strip-stat">
+				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
+				<div><b>8+</b> <span>Communes Genevois & Chablais</span></div>
+			</div>
+			<div class="strip-sep"></div>
+			<div class="strip-stat">
+				<span class="strip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4.5L8 10a13 13 0 0 0 6 6l1.5-2.5L20 15v4a1.5 1.5 0 0 1-1.6 1.5C9.6 19.9 4.1 14.4 3.5 5.6A1.5 1.5 0 0 1 5 4Z"/></svg></span>
+				<div><b>06 60 56 02 00</b> <span>Éric, votre ambassadeur local</span></div>
+			</div>
+		</div>
+	</div>
 
 	<!-- À propos -->
 	<section id="pourquoi-moi" class="section about">
@@ -150,17 +180,19 @@ const biens = await getBiens();
 				const t = document.getElementById('gs-type').value.toLowerCase();
 				const c = document.getElementById('gs-categ').value;
 				const z = document.getElementById('gs-zone').value.toLowerCase();
+				const minCh = Number(document.getElementById('gs-chambres').value) || 0;
 				let visible = 0;
 				for (const card of document.querySelectorAll('#biens-grid .immo-card')) {
 					const type = (card.dataset.type || '').toLowerCase();
 					const categ = card.dataset.categorie || '';
 					const ville = (card.dataset.ville || '').toLowerCase();
-					const ok = (!t || type.includes(t)) && (!c || categ === c) && (!z || ville.includes(z));
+					const ch = Number(card.dataset.chambres || 0);
+					const ok = (!t || type.includes(t)) && (!c || categ === c) && (!z || ville.includes(z)) && (!minCh || ch >= minCh);
 					card.style.display = ok ? '' : 'none';
 					if (ok) visible++;
 				}
 				const titre = document.getElementById('biens-titre');
-				const filtres = [t && 'type ' + t, c && (c === 'neuf' ? 'neuf' : 'ancien'), z && z].filter(Boolean);
+				const filtres = [t && 'type ' + t, c && (c === 'neuf' ? 'neuf' : 'ancien'), z && z, minCh && minCh + '+ chambres'].filter(Boolean);
 				if (titre) titre.innerHTML = filtres.length
 					? `Biens <em>${filtres.join(' · ')}</em> <span style="color:#777;font-weight:400">(${visible})</span>`
 					: 'Nos biens en ventes <em>chez Bkeys</em>';
