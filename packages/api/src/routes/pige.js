@@ -56,6 +56,45 @@ pigeIngestRouter.post('/ingest', async (req, res) => {
   }
 });
 
+// IDs des annonces sans photo (pour le backfill d'images via acteur silentflow, appelé par n8n)
+pigeIngestRouter.get('/photos-manquantes', async (req, res) => {
+  if (!req.headers['x-ingest-secret'] || req.headers['x-ingest-secret'] !== process.env.PIGE_INGEST_SECRET) {
+    return res.status(401).json({ error: 'Secret invalide.' });
+  }
+  const limit = Number(req.query.limit || 200);
+  const rows = await prisma.pigeAnnonce.findMany({
+    where: { photoUrl: null, enleve: false },
+    select: { id: true, sourceId: true, url: true },
+    orderBy: { dateParution: 'desc' },
+    take: limit,
+  });
+  res.json(rows);
+});
+
+// Reçoit les photos récupérées par l'acteur d'enrichissement (url → images[])
+pigeIngestRouter.post('/photos', async (req, res) => {
+  const secret = req.headers['x-ingest-secret'];
+  if (!process.env.PIGE_INGEST_SECRET || secret !== process.env.PIGE_INGEST_SECRET) {
+    return res.status(401).json({ error: 'Secret invalide.' });
+  }
+  const { fotos } = req.body ?? {};
+  if (!Array.isArray(fotos)) return res.status(400).json({ error: 'Body attendu : { fotos: [{ url, photoUrl, photosJson }] }' });
+  let maj = 0;
+  for (const f of fotos) {
+    if (!f?.url || !f?.photoUrl) continue;
+    const annonce = await prisma.pigeAnnonce.findUnique({
+      where: { source_url: { source: 'leboncoin', url: String(f.url) } },
+    });
+    if (!annonce) continue;
+    await prisma.pigeAnnonce.update({
+      where: { id: annonce.id },
+      data: { photoUrl: f.photoUrl, photosJson: f.photosJson ?? undefined },
+    });
+    maj++;
+  }
+  res.json({ ok: true, maj });
+});
+
 // Configuration minimale de collecte : aucune annonce, aucun contact et aucun secret.
 pigeAdminRouter.get('/schedule-config', async (req, res) => {
   const recherches = await prisma.pigeRecherche.findMany({
