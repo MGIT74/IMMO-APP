@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api.js';
+import { I as Ic0, MiniIcon, PATHS } from '../lib/icons.jsx';
+const I = Ic0;
 
 const STATUTS = [
   { key: 'nouveau', label: 'Nouveau', color: '#6366f1' },
@@ -122,17 +124,17 @@ const TYPE_EVT_LABEL = {
 };
 
 const INDICE_LABEL = {
-  chaud: { txt: '🔥 Demande forte', color: '#e02d3c', bg: '#fdeeec' },
-  tiede: { txt: '🔔 Demande modérée', color: '#b45309', bg: '#fef3c7' },
-  calme: { txt: '😴 Demande calme', color: '#475569', bg: '#eef1f6' },
-  inconnu: { txt: '— En observation', color: '#64748b', bg: '#f1f5f9' },
+  chaud: { txt: 'Demande forte', color: '#e02d3c', bg: '#fdeeec' },
+  tiede: { txt: 'Demande modérée', color: '#b45309', bg: '#fef3c7' },
+  calme: { txt: 'Demande calme', color: '#475569', bg: '#eef1f6' },
+  inconnu: { txt: 'En observation', color: '#64748b', bg: '#f1f5f9' },
 };
 
 /* Badge de sortie selon qualification (un retrait ≠ une vente) */
 const SORT_BADGE = {
-  vente_probable: { txt: '🏁 Vendu probable', bg: '#e8f7ef', color: '#0e9f6e' },
-  republiee: { txt: '♻️ Repositionnement prix', bg: '#fef3c7', color: '#b45309' },
-  en_attente: { txt: '⏳ Enlevée — attente qualification (14 j)', bg: '#f1f5f9', color: '#64748b' },
+  vente_probable: { txt: 'Vendu probable', bg: '#e8f7ef', color: '#0e9f6e' },
+  republiee: { txt: 'Repositionnement prix', bg: '#fef3c7', color: '#b45309' },
+  en_attente: { txt: 'Enlevée — attente (14 j)', bg: '#f1f5f9', color: '#64748b' },
 };
 
 function jolifierZone(k) {
@@ -166,9 +168,9 @@ function TensionZones({ zones }) {
         })}
       </div>
       <div className="tension-legende">
-        <span><b style={{ color: '#0e9f6e' }}>🏁 Sorties = ventes probables</b></span>
-        <span><b style={{ color: '#b45309' }}>♻️ Republican = repositionnement prix (exclu du calcul)</b></span>
-        <span><b style={{ color: '#64748b' }}>⏳ En attente</b></span>
+        <span><b style={{ color: '#0e9f6e' }}>Sorties = ventes probables</b></span>
+        <span><b style={{ color: '#b45309' }}>Repositionnement = retiré puis republicé (exclu du calcul)</b></span>
+        <span><b style={{ color: '#64748b' }}>En attente</b></span>
         <span className="muted">% = part sorties en ≤ 10 j · min. 5 sorties pour un indice · patience 14 j après retrait</span>
       </div>
     </div>
@@ -187,7 +189,7 @@ function CarteAnnonce({ a, onOpen, onFavori }) {
     <div className={'annonce-card' + (a.enleve ? ' card-enleve' : '')} onClick={() => onOpen(a.id)}>
       {a.enleve && (
         <span className="mini-badge" style={{ background: SORT_BADGE[a.sort]?.bg || '#fdeeec', color: SORT_BADGE[a.sort]?.color || '#b91c1c', marginBottom: 4 }}>
-          🚫 Enlevée {a.dateEnlevement ? new Date(a.dateEnlevement).toLocaleDateString('fr-FR') : ''}
+          Enlevée {a.dateEnlevement ? new Date(a.dateEnlevement).toLocaleDateString('fr-FR') : ''}
         </span>
       )}
       {a.enleve && a.sort && (
@@ -202,13 +204,13 @@ function CarteAnnonce({ a, onOpen, onFavori }) {
       </span>
       <div className="annonce-photo">
         {a.photoUrl ? <img src={a.photoUrl} alt="" loading="lazy" /> : <div className="no-photo">🏠</div>}
-        {a.photosJson?.length > 1 && <span className="photo-nb">📷 {a.photosJson.length}</span>}
+        {a.photosJson?.length > 1 && <span className="photo-nb"><MiniIcon d={PATHS.photo} size={11} /> {a.photosJson.length}</span>}
       </div>
 
       <div className="annonce-main">
         <div className="annonce-head">
           <span className="annonce-id">{a.sourceId || a.id}</span>
-          {a.nbRepubs > 0 && <span className="mini-badge repub" title="Republiée plusieurs fois">🔁 {a.nbRepubs}</span>}
+          {a.nbRepubs > 0 && <span className="mini-badge repub" title="Republiée plusieurs fois"><MiniIcon d={PATHS.repeat} size={11} /> {a.nbRepubs}</span>}
           {a.dpe && <span className="mini-badge dpe">{a.dpe}</span>}
           {a.meuble && <span className="mini-badge">Meublé</span>}
         </div>
@@ -220,9 +222,9 @@ function CarteAnnonce({ a, onOpen, onFavori }) {
           {a.surface ? <span className="m2">{Math.round(a.prix / a.surface).toLocaleString('fr-FR')} €/m²</span> : null}
         </div>
         <div className="annonce-meta">
-          {a.surface && <span>▦ {a.surface} m²</span>}
-          {a.pieces && <span>⌂ {a.pieces} p.</span>}
-          {a.chambres && <span>🛏 {a.chambres}</span>}
+          {a.surface && <span className="meta-ic"><MiniIcon d={PATHS.surface} size={12} /> {a.surface} m²</span>}
+          {a.pieces && <span className="meta-ic"><MiniIcon d={PATHS.pieces} size={12} /> {a.pieces}</span>}
+          {a.chambres && <span className="meta-ic"><MiniIcon d={PATHS.chambres} size={12} /> {a.chambres}</span>}
           {a.typeBien && <span className="type-chip">{a.typeBien}</span>}
         </div>
         {points.length >= 2 ? (
@@ -257,9 +259,9 @@ function CarteAnnonce({ a, onOpen, onFavori }) {
         <span>Vu : {a.dateDernierScan ? new Date(a.dateDernierScan).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
         <span className="foot-right">
           {a.parutionJours != null && <>{a.parutionJours}j en ligne ·</>}
-          <span className="stat-inline">{a.contact?.telephone ? '📞 OK' : '📵 —'}</span>
-          <span className="stat-inline">🔁 {a.nbRepubs || 0}</span>
-          <span className="stat-inline">📉 {a.prixHistorique?.length || 0}</span>
+          <span className="stat-inline"><MiniIcon d={PATHS.tel} size={12} /> {a.contact?.telephone ? 'OK' : '—'}</span>
+          <span className="stat-inline"><MiniIcon d={PATHS.repeat} size={12} /> {a.nbRepubs || 0}</span>
+            <span className="stat-inline"><MiniIcon d={PATHS.tendanceBas} size={12} /> {a.prixHistorique?.length || 0}</span>
         </span>
       </div>
     </div>
@@ -340,7 +342,7 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
           <button className={a.estFavori ? 'btn-mini on' : 'btn-mini'} onClick={() => patchStatut({ estFavori: !a.estFavori })}>
             {a.estFavori ? '★ Favori' : '☆ Favori'}
           </button>
-          <span className="badge-repub">🔁 Republications : {a.nbRepubs}</span>
+          <span className="badge-repub"><MiniIcon d={PATHS.repeat} size={11} /> Republications : {a.nbRepubs}</span>
           {a.dpe && <span className="mini-badge dpe">DPE {a.dpe}</span>}
         </div>
 
@@ -376,10 +378,10 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
             placeholder="Ex : appelé le 5/10, rappeler le 12 — vendeur pressé, discutable à -5%…" />
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             <button className="btn-mini" disabled={busy} onClick={saveNote}>💾 Enregistrer la note</button>
-            <button className="btn-mini" disabled={busy} onClick={journaliserAppel}>☎️ Journaliser un appel</button>
+            <button className="btn-mini" disabled={busy} onClick={journaliserAppel}><MiniIcon d={PATHS.tel} size={12} /> Journaliser un appel</button>
             {a.contact?.telephone && (
               <button className="btn-mini" disabled={busy} onClick={() => patchStatut({ statut: 'contacte' })}>
-                ✅ Marquer contacté
+                Marquer contacté
               </button>
             )}
           </div>
@@ -390,7 +392,7 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
           <div className="pige-journal">
             {a.evenements.map((e) => (
               <div key={e.id} className="pige-journal-row">
-                <span>{TYPE_EVT_LABEL[e.type]?.[0] || '•'}</span>
+                <span className="jevt"><MiniIcon d={I[TYPE_EVT_LABEL[e.type]?.[0] ?? '']} size={15} /></span>
                 <div>
                   <div style={{ fontSize: 13 }}><b>{TYPE_EVT_LABEL[e.type]?.[1] || e.type}</b>{e.valeur != null ? ` : ${fmtEur(e.valeur)}` : ''}</div>
                   {e.detail && <div className="muted" style={{ fontSize: 12 }}>{e.detail}</div>}
@@ -408,7 +410,7 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
   );
 }
 
-function IconRun() { return <span>▶</span>; }
+function IconRun() { return <MiniIcon d={PATHS.playIcon} size={12} />; }
 
 /* ---------- Toast / pop-up élégant ---------- */
 function Toast({ toast, onClose }) {
@@ -417,7 +419,7 @@ function Toast({ toast, onClose }) {
   return (
     <div className="toast-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={'toast-box' + (isError ? ' toast-err' : ' toast-ok')} role="alert">
-        <div className="toast-icon">{isError ? '⚠️' : '✅'}</div>
+        <div className="toast-icon"><MiniIcon d={isError ? PATHS.warn : PATHS.check} size={20} /></div>
         <div className="toast-body">
           <b>{isError ? 'Une erreur est survenue' : 'Succès'}</b>
           <p>{toast.msg}</p>
@@ -620,11 +622,11 @@ export default function Pige() {
           <input className="pige-search" placeholder="Rechercher par ville, titre…" value={filtres.q}
             onChange={(e) => setFiltres({ ...filtres, q: e.target.value })}
             onKeyDown={(e) => e.key === 'Enter' && load()} />
-          <button className="btn-light" onClick={load}>⌕Filtrer</button>
+          <button className="btn-light" onClick={load}><MiniIcon d={PATHS.recherche ?? ""} size={13} />Filtrer</button>
           <button className="btn-light" onClick={() => window.open('/api/admin/pige/annonces-export?' + new URLSearchParams(
             Object.entries({ ...filtres }).filter(([k, v]) => v && k !== 'avecTel').map(([k, v]) => [k, v === false ? '' : v])
-          ).toString(), '_blank')}>⬇ Export CSV</button>
-          <button className="btn-primary-c" onClick={load}>＋ Actualiser</button>
+          ).toString(), '_blank')}>Export CSV</button>
+          <button className="btn-primary-c" onClick={load}>Actualiser</button>
         </div>
       </div>
 
@@ -786,7 +788,7 @@ export default function Pige() {
         </select>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.avecTel} onChange={(e) => setFiltres({ ...filtres, avecTel: e.target.checked })} /> Avec tél.</label>
         <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.repub} onChange={(e) => setFiltres({ ...filtres, repub: e.target.checked })} /> Republiées</label>
-        <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.depublie} onChange={(e) => { setFiltres({ ...filtres, depublie: e.target.checked }); setPage(1); }} /> 🚫 Enlevées</label>
+        <label style={{ fontSize: 13 }}><input type="checkbox" checked={filtres.depublie} onChange={(e) => { setFiltres({ ...filtres, depublie: e.target.checked }); setPage(1); }} /> Enlevées</label>
         <button onClick={appliquerFiltres}>Appliquer</button>
       </div>
 
@@ -837,7 +839,7 @@ export default function Pige() {
                 <tr key={r.id}>
                   <td>{new Date(r.startedAt).toLocaleString('fr-FR')}</td>
                   <td>{r.recherche?.nom || '—'}</td>
-                  <td>{r.statut === 'ok' ? '✅' : r.statut === 'error' ? '❌' : '⏳'}</td>
+                  <td>{r.statut === 'ok' ? <MiniIcon d={PATHS.check} size={14} /> : r.statut === 'error' ? <MiniIcon d={PATHS.croix} size={14} /> : '…'}</td>
                   <td>{r.annoncesRecues}</td>
                   <td>{r.annoncesNouvelles}</td>
                   <td>{r.coutUsd != null ? `$${Number(r.coutUsd).toFixed(2)}` : '—'}</td>

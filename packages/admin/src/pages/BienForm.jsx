@@ -187,8 +187,8 @@ export default function BienForm() {
               <option>Parking</option>
             </select>
             <select value={bien.categorie || 'ancien'} onChange={(e) => updateField('categorie', e.target.value)}>
-              <option value="neuf">🏠 Neuf (jamais habité)</option>
-              <option value="ancien">✅ Ancien (déjà habité)</option>
+              <option value="neuf">Neuf (jamais habité)</option>
+              <option value="ancien">Ancien (déjà habité)</option>
             </select>
             <input type="number" placeholder="Prix (€)" value={bien.prix} onChange={(e) => updateField('prix', e.target.value)} required />
             <input placeholder="Ville" value={bien.ville} onChange={(e) => updateField('ville', e.target.value)} />
@@ -199,7 +199,7 @@ export default function BienForm() {
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
             <input type="checkbox" checked={bien.luxe} onChange={(e) => updateField('luxe', e.target.checked)} style={{ width: 'auto' }} />
-            ✨ Bien de luxe (apparaît dans la section "Luxury" du site, design noir)
+            Bien de luxe (apparaît dans la section "Luxury" du site, design noir)
           </label>
           {bien.luxe && (
             <textarea
@@ -263,7 +263,7 @@ export default function BienForm() {
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
             <input type="checkbox" checked={bien.syndicatActif} onChange={(e) => updateField('syndicatActif', e.target.checked)} style={{ width: 'auto' }} />
-            ⚖️ Procédure en cours contre le syndicat de copropriété (art. 13 loi ALUR — mention obligatoire)
+            Procédure en cours contre le syndicat de copropriété (art. 13 loi ALUR — mention obligatoire)
           </label>
           {bien.syndicatActif && (
             <input
@@ -371,7 +371,7 @@ export default function BienForm() {
               <div className="plan-list">
                 {plans.map((plan) => (
                   <div key={plan.id} className="plan-row">
-                    <span>📄 {plan.label}</span>
+                    <span className="plan-ic"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.6" style={{verticalAlign:"-2px"}}><path d="M14 3H6v18h12V8z"/><path d="M14 3v5h5"/></svg> {plan.label}</span>
                     <div className="actions">
                       <a href={plan.url.startsWith('http') ? plan.url : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${plan.url}`} target="_blank" rel="noopener noreferrer">
                         <button type="button">Voir</button>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
+import { MiniIcon, PATHS } from '../lib/icons.jsx';
 
 export default function Biens() {
   const [biens, setBiens] = useState([]);
@@ -70,7 +71,7 @@ export default function Biens() {
                           style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid #e2e2e2' }}
                         />
                       ) : (
-                        <div style={{ width: 44, height: 44, borderRadius: 8, background: '#f0f0ee', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#bbb' }}>🏠</div>
+                        <div style={{ width: 44, height: 44, borderRadius: 8, background: '#f0f0ee', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: '#bbb' }}><MiniIcon d={PATHS.maison} size={18} /></div>
                       )}
                       <div>
                         <Link to={`/biens/${bien.id}/edit`}><strong>{bien.titre}</strong></Link>
@@ -83,11 +84,11 @@ export default function Biens() {
                     {Number(bien.honoraires).toLocaleString('fr-FR')} €
                     {bien.tauxPerso != null && <div className="muted">{bien.taux}% perso</div>}
                   </td>
-                  <td>♥ {bien.likes}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style={{ verticalAlign: '-2px' }}><path d="M12 20.8C6.4 16.5 3 13.2 3 9.3 3 6.4 5.4 4 8.3 4c1.5 0 2.9.6 3.7 1.7C12.8 4.6 14.2 4 15.7 4 18.6 4 21 6.4 21 9.3c0 3.9-3.4 7.2-9 11.5z"/></svg> {bien.likes}</td>
                   <td>
                     {bien.vendu && <span className="badge badge-red">Vendu</span>}
                     {!bien.publie && <span className="badge badge-grey">Masqué</span>}
-                    {bien.luxe && <span className="badge badge-gold">✨ Luxe</span>}
+                    {bien.luxe && <span className="badge badge-gold">Luxe</span>}
                     {bien.categorie === 'neuf' && <span className="badge badge-new">Neuf</span>}
                     {bien.categorie === 'ancien' && <span className="badge badge-ancien">Ancien</span>}
                   </td>
