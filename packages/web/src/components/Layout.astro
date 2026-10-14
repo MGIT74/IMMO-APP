@@ -81,6 +81,19 @@ const { title = 'Ambassadeur Immo', description = '', theme = 'light', chrome = 
 				});
 			});
 		}
+
+		// Ancres : glissement fluide (sécurisé via JS, l'ancien header ne « saute » plus)
+		document.addEventListener('click', (e) => {
+			const link = e.target.closest('a[href*="#"]');
+			if (!link) return;
+			const url = new URL(link.href, location.origin);
+			if (url.pathname !== location.pathname && url.pathname !== '/') return;
+			const target = document.getElementById(url.hash.slice(1));
+			if (!target) return;
+			e.preventDefault();
+			target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			history.pushState(null, '', url.pathname + url.hash);
+		});
 	</script>
 </body>
 </html>

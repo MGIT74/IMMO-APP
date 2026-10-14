@@ -5,7 +5,7 @@
 	--immo-radius: 24px;
 }
 
-body {
+html {
 	scroll-behavior: smooth;
 }
 section[id] { scroll-margin-top: 86px; }
