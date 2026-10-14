@@ -220,34 +220,4 @@ const biens = await getBiens();
 			});
 		}
 	</script>
-		// Filtre instantané de la grille depuis la barre de recherche du hero
-		const search = document.getElementById('hero-search');
-		if (search) {
-			search.addEventListener('submit', (e) => {
-				e.preventDefault();
-				const t = document.getElementById('gs-type').value.toLowerCase();
-				const c = document.getElementById('gs-categ').value;
-				const z = document.getElementById('gs-zone').value.toLowerCase();
-				const minCh = Number(document.getElementById('gs-chambres').value) || 0;
-				let visible = 0;
-				for (const card of document.querySelectorAll('#biens-grid .immo-card')) {
-					const type = (card.dataset.type || '').toLowerCase();
-					const categ = card.dataset.categorie || '';
-					const ville = (card.dataset.ville || '').toLowerCase();
-					const ch = Number(card.dataset.chambres || 0);
-					const ok = (!t || type.includes(t)) && (!c || categ === c) && (!z || ville.includes(z)) && (!minCh || ch >= minCh);
-					card.style.display = ok ? '' : 'none';
-					if (ok) visible++;
-				}
-				const titre = document.getElementById('biens-titre');
-				const filtres = [t && 'type ' + t, c && (c === 'neuf' ? 'neuf' : 'ancien'), z && z, minCh && minCh + '+ chambres'].filter(Boolean);
-				if (titre) titre.innerHTML = filtres.length
-					? `Biens <em>${filtres.join(' · ')}</em> <span style="color:#777;font-weight:400">(${visible})</span>`
-					: 'Nos biens en ventes <em>chez Bkeys</em>';
-				const vide = document.getElementById('biens-vide');
-				if (vide) vide.style.display = visible ? 'none' : '';
-				document.getElementById('nos-biens').scrollIntoView({ behavior: 'smooth' });
-			});
-		}
-	</script>
 </Layout>
