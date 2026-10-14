@@ -5,6 +5,10 @@
 	--immo-radius: 24px;
 }
 
+body {
+	scroll-behavior: smooth;
+}
+section[id] { scroll-margin-top: 86px; }
 * { box-sizing: border-box; }
 
 body {
