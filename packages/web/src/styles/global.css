@@ -936,6 +936,28 @@ body.nav-open { overflow: hidden; }
 .nosbiens-head h2 { margin: 0; }
 .nosbiens-side .cta-play { background: rgba(20,24,29,.06); }
 
+/* Animation d'envoi (spinner + état envoyé) */
+.send-spinner {
+	width: 14px; height: 14px;
+	border: 2px solid rgba(255,255,255,.35);
+	border-top-color: #fff;
+	border-radius: 50%;
+	display: inline-block;
+	animation: spin .7s linear infinite;
+	vertical-align: -2px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.dl-cta-submit.is-sending { opacity: .75; cursor: wait; pointer-events: none; }
+.dl-cta-submit.is-sent, .home-lead-form button.is-sent {
+	background: #1d9d5c !important;
+	color: #fff !important;
+	display: inline-flex !important;
+	align-items: center; justify-content: center; gap: 8px;
+}
+.home-lead-form button.is-sending { opacity: .75; }
+@keyframes popCheck { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+.dl-cta-submit.is-sent svg, .home-lead-form button.is-sent svg { animation: popCheck .35s cubic-bezier(.2,.9,.3,1.4); }
+
 /* --- Contact : bannière sombre --- */
 .contact-wrap { padding-top: 30px; }
 .home-lead-form {

@@ -202,17 +202,27 @@ const biens = await getBiens();
 				if (payload.website) { return; }
 				const fb = document.getElementById('home-lead-feedback');
 				const btn = hlf.querySelector('button[type="submit"]');
+				const labelBtn = btn.textContent;
 				btn.disabled = true;
+				btn.classList.add('is-sending');
+				btn.innerHTML = '<span class="send-spinner"></span> Envoi en cours…';
 				const res = await fetch(API_URL + '/api/leads', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(payload),
 				});
 				btn.disabled = false;
+				btn.classList.remove('is-sending');
 				if (res.ok) {
+					btn.classList.add('is-sent');
+					btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg> Message envoyé';
 					fb.textContent = 'Merci ! Votre demande a bien été envoyée.';
 					fb.classList.add('is-ok');
 					hlf.reset();
+					setTimeout(() => {
+						btn.classList.remove('is-sent');
+						btn.textContent = labelBtn;
+					}, 3500);
 				} else {
 					const err = await res.json().catch(() => ({}));
 					fb.textContent = err.error || 'Une erreur est survenue.';

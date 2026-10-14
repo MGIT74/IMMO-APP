@@ -447,23 +447,39 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 		};
 		document.getElementById('open-lead-form').addEventListener('click', openForm);
 
-		// --- Formulaire de demande ---
+		// --- Formulaire de demande (envoi animé + confirmation) ---
 		const feedback = document.getElementById('lead-feedback');
+		const submitBtn = form.querySelector('.dl-cta-submit');
+		const labelBtn = submitBtn.textContent;
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
+			submitBtn.disabled = true;
+			submitBtn.classList.add('is-sending');
+			submitBtn.innerHTML = '<span class="send-spinner"></span> Envoi en cours…';
 			const payload = Object.fromEntries(new FormData(form).entries());
-			const res = await fetch(API_URL + '/api/leads', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
-			if (res.ok) {
-				feedback.textContent = 'Merci ! Votre demande a bien été envoyée.';
-				feedback.classList.add('is-ok');
-				form.reset();
-			} else {
-				const data = await res.json();
-				feedback.textContent = data.error || 'Une erreur est survenue.';
+			try {
+				const res = await fetch(API_URL + '/api/leads', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload),
+				});
+				if (res.ok) {
+					submitBtn.classList.remove('is-sending');
+					submitBtn.classList.add('is-sent');
+					submitBtn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg> Message envoyé';
+					form.reset();
+					setTimeout(() => {
+						submitBtn.classList.remove('is-sent');
+						submitBtn.textContent = labelBtn;
+					}, 3500);
+				} else {
+					const data = await res.json().catch(() => ({}));
+					feedback.textContent = data.error || 'Une erreur est survenue.';
+				}
+			} catch (err) {
+				feedback.textContent = 'Connexion impossible — réessayez.';
+			} finally {
+				submitBtn.disabled = false;
 			}
 		});
 	</script>
