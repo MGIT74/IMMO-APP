@@ -102,7 +102,27 @@ model Lead {
   tel       String?
   message   String?  @db.Text
   source    String   @default("site") // site | webhook
+  // --- Suivi CRM prospect ---
+  statut    String   @default("nouveau") // nouveau | a_contacter | contacte | interesse | visite | offre | archive
+  budgetMin Float? // budget d'achat du prospect
+  budgetMax Float?
+  noteMemo  String?  @db.Text
+  estFavori Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  evenements LeadEvenement[]
+}
+
+// Journal CRM du prospect (appels, notes, changements de statut...)
+model LeadEvenement {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type      String // appel | note | statut | suggestion
+  detail    String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
 }
 
 model Like {

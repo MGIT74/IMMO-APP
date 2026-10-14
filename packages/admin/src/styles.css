@@ -394,3 +394,26 @@ button.danger { background: #e53935; }
   .tension-row { grid-template-columns: 1fr; gap: 6px; }
   .tension-metrics { justify-content: flex-start; }
 }
+
+/* --- CRM Prospect (Demandes) --- */
+.prospect-avatar {
+	width: 48px; height: 48px; border-radius: 50%;
+	display: inline-flex; align-items: center; justify-content: center;
+	font-weight: 800; font-size: 16px; flex-shrink: 0;
+	letter-spacing: .02em;
+}
+.prospect-avatar.sm { width: 38px; height: 38px; font-size: 13px; }
+.lead-bien-row { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.lead-bien-row b { font-size: 14.5px; }
+.lead-bien-prix { font-weight: 800; font-size: 17px; white-space: nowrap; }
+.budget-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.budget-row input { max-width: 140px; }
+.budget-row span { color: #9aa3b2; }
+.tel-chip {
+	display: inline-flex; align-items: center; gap: 6px;
+	background: #f1f4f9; border-radius: 999px;
+	padding: 5px 13px; font-size: 13px; font-weight: 700;
+	color: #1f2937 !important; text-decoration: none;
+	margin-right: 6px;
+}
+.jevt { width: 22px; text-align: center; flex-shrink: 0; font-weight: 700; color: #6b7280; }
