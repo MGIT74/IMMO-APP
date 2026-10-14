@@ -989,18 +989,19 @@ body.nav-open { overflow: hidden; }
 	margin-top: 60px;
 	overflow: hidden;
 }
-/* Wordmark géant translucide au-dessus du footer */
+/* Wordmark géant translucide — tout en bas du footer */
 .footer-giant {
 	font-size: clamp(56px, 9.5vw, 170px);
 	font-weight: 800;
 	letter-spacing: -0.04em;
-	line-height: .95;
+	line-height: .8;
 	white-space: nowrap;
 	text-align: center;
 	color: rgba(255,255,255,.07);
 	user-select: none;
 	pointer-events: none;
-	margin-bottom: 30px;
+	margin-top: 40px;
+	margin-bottom: -18px; /* repose sur le bord inférieur, légèrement tronqué */
 }
 .footer-giant span { font-weight: 400; color: rgba(255,255,255,.05); }
 .footer-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
