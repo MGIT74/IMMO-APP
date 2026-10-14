@@ -159,19 +159,67 @@ const biens = await getBiens();
 				<p>Je suis disponible pour répondre à toutes vos questions — de vive voix ou par message.</p>
 			</div>
 			<div class="contact-right">
-				<a href="tel:0660560200" class="contact-phone-btn">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4.5L8 10a13 13 0 0 0 6 6l1.5-2.5L20 15v4a1.5 1.5 0 0 1-1.6 1.5C9.6 19.9 4.1 14.4 3.5 5.6A1.5 1.5 0 0 1 5 4Z"/></svg>
-					06 60 56 02 00
-				</a>
-				<div class="contact-social">
-					<a href="https://www.facebook.com/bkeyshautesavoie" target="_blank" rel="noopener noreferrer">Facebook</a>
-					<a href="https://www.instagram.com/bkeys_eric/" target="_blank" rel="noopener noreferrer">Instagram</a>
+				<form id="home-lead-form" class="home-lead-form" autocomplete="off">
+					<input type="text" name="website" class="hp-field" tabindex="-1" aria-hidden="true" />
+					<input name="nom" placeholder="Votre nom" required />
+					<input name="contact" placeholder="Téléphone ou email" required />
+					<textarea name="message" rows="3" placeholder="Votre projet : vente, achat, estimation…"></textarea>
+					<button type="submit">Envoyer <span class="cta-arrow">→</span></button>
+					<p class="home-lead-feedback" id="home-lead-feedback"></p>
+				</form>
+				<div class="contact-phone-row">
+					<a href="tel:0660560200" class="contact-phone-btn">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4.5L8 10a13 13 0 0 0 6 6l1.5-2.5L20 15v4a1.5 1.5 0 0 1-1.6 1.5C9.6 19.9 4.1 14.4 3.5 5.6A1.5 1.5 0 0 1 5 4Z"/></svg>
+						06 60 56 02 00
+					</a>
+					<div class="contact-social">
+						<a href="https://www.facebook.com/bkeyshautesavoie" target="_blank" rel="noopener noreferrer">Facebook</a>
+						<a href="https://www.instagram.com/bkeys_eric/" target="_blank" rel="noopener noreferrer">Instagram</a>
+					</div>
 				</div>
 			</div>
 		</div>
 	</section>
 
 	<script>
+		const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:4000';
+		// Formulaire d'info générique (projet vente/achat) -> /api/leads (bienId null)
+		const hlf = document.getElementById('home-lead-form');
+		if (hlf) {
+			hlf.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const data = Object.fromEntries(new FormData(hlf).entries());
+				// champ contact unique : on devine email vs téléphone
+				const payload = {
+					nom: data.nom,
+					message: data.message || null,
+					website: data.website || undefined,
+					bienId: null,
+					...(String(data.contact || '').includes('@')
+						? { email: data.contact }
+						: { tel: data.contact }),
+				};
+				if (payload.website) { return; }
+				const fb = document.getElementById('home-lead-feedback');
+				const btn = hlf.querySelector('button[type="submit"]');
+				btn.disabled = true;
+				const res = await fetch(API_URL + '/api/leads', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload),
+				});
+				btn.disabled = false;
+				if (res.ok) {
+					fb.textContent = 'Merci ! Votre demande a bien été envoyée.';
+					fb.classList.add('is-ok');
+					hlf.reset();
+				} else {
+					const err = await res.json().catch(() => ({}));
+					fb.textContent = err.error || 'Une erreur est survenue.';
+				}
+			});
+		}
+	</script>
 		// Filtre instantané de la grille depuis la barre de recherche du hero
 		const search = document.getElementById('hero-search');
 		if (search) {
