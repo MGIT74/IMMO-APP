@@ -982,7 +982,27 @@ body.nav-open { overflow: hidden; }
 .legal-section h1 { font-size: 28px; margin-bottom: 24px; }
 
 /* --- Footer --- */
-.site-footer { background: var(--immo-dark); color: #ccc; padding: 50px 32px 24px; margin-top: 60px; }
+.site-footer {
+	background: var(--immo-dark);
+	color: #ccc;
+	padding: 70px 32px 24px;
+	margin-top: 60px;
+	overflow: hidden;
+}
+/* Wordmark géant translucide au-dessus du footer */
+.footer-giant {
+	font-size: clamp(56px, 9.5vw, 170px);
+	font-weight: 800;
+	letter-spacing: -0.04em;
+	line-height: .95;
+	white-space: nowrap;
+	text-align: center;
+	color: rgba(255,255,255,.07);
+	user-select: none;
+	pointer-events: none;
+	margin-bottom: 30px;
+}
+.footer-giant span { font-weight: 400; color: rgba(255,255,255,.05); }
 .footer-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
 .footer-inner strong { color: #fff; display: block; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; }
 .footer-inner a { color: #ccc; text-decoration: none; }
