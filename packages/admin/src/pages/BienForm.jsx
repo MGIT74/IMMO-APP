@@ -199,11 +199,11 @@ export default function BienForm() {
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
             <input type="checkbox" checked={bien.luxe} onChange={(e) => updateField('luxe', e.target.checked)} style={{ width: 'auto' }} />
-            Bien de luxe (apparaît dans la section "Luxury" du site, design noir)
+            Bien de Prestige (apparaît dans la section "Prestige" du site, design noir)
           </label>
           {bien.luxe && (
             <textarea
-              placeholder="Texte éditorial affiché sur la page Luxury (ex : « Une villa qui transcende...»)"
+              placeholder="Texte éditorial affiché sur la page Prestige (ex : « Une villa qui transcende...»)"
               value={bien.description}
               onChange={(e) => updateField('description', e.target.value)}
               rows={3}
