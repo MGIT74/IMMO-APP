@@ -1030,8 +1030,12 @@ body.theme-dark .call-btn {
 	color: #0b0b0b;
 }
 .nav-luxury {
-	color: #f5f0e4 !important;
+	color: var(--immo-dark) !important;
 	font-weight: 800 !important;
+}
+/* Sur la page Prestige (header noir), le lien redevient clair */
+body.theme-dark .site-header .nav-luxury {
+	color: #ece4d3 !important;
 }
 
 .luxury-hero {
