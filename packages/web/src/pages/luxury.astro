@@ -72,7 +72,7 @@ const biensLuxe = biens.filter((b) => b.luxe);
 								</div>
 
 								<div class="lux-type-label">
-									{bien.type || 'Bien'}<br /><span>{Number(bien.prix).toLocaleString('fr-FR')} €</span>
+									{bien.type === 'Luxury' ? 'Prestige' : (bien.type || 'Bien')}<br /><span>{Number(bien.prix).toLocaleString('fr-FR')} €</span>
 								</div>
 
 								{photos.length > 1 && (
