@@ -5,11 +5,12 @@ stockées dans MySQL, consultables via l'API admin.
 
 **Deux modes de collecte possibles :**
 
-1. **Via n8n (recommandé si tu as déjà une instance)** — le workflow lance les
-   actors Apify et pousse les résultats vers `POST /api/pige/ingest`.
-   Importer `pige-n8n-workflow.json` dans n8n (Workflows → Import from File).
+1. **Via n8n (recommandé si tu as déjà une instance)** — le workflow déclenche l'API
+   (`POST /api/pige/recherches/:id/run`, secret `X-Ingest-Secret`) qui lance elle-même
+   les actors Apify. Importer `pige-n8n-workflow-v3.json` dans n8n (Workflows → Import from File).
 2. **Via le cron interne** — le module `src/pige/cron.js` lance directement les
-   actors depuis l'API (aucune config n8n). Activé par défaut (`PIGE_CRON=true`).
+   actors depuis l'API (aucune config n8n). Activé par défaut (`PIGE_CRON=true`) ;
+   à mettre sur `false` si tu utilises le mode n8n (sinon double collecte).
 
 ## Coûts Apify (tarifs Store constatés, plan gratuit)
 
@@ -78,14 +79,22 @@ Séquentiels (compat plan gratuit Apify = 1 run simultané). Désactivable avec 
 
 ## Mode n8n (recommandé)
 
+n8n ne parle plus à Apify : il appelle l'API qui exécute elle-même les runs
+(exactement le même code que le run manuel — zéro divergence de schéma/credentials,
+les échecs apparaissent dans l'admin via `PigeRun`).
+
 1. Sur le VPS, ajoute au `.env` de l'API :
    `PIGE_INGEST_SECRET="un-long-secret-aleatoire"` + `pm2 restart immo-api`
-2. Dans n8n : **Workflows → Import from File** → `pige-n8n-workflow.json`
-3. Dans le workflow :
-   - Remplace `https://TON-DOMAINE` par ton domaine dans le node "Envoyer à l'API Immo-App"
-   - Crée 2 credentials "Header Auth" ou mets le token Apify en query param
-   - Le secret n8n ("X-Ingest-Secret") = la valeur de `PIGE_INGEST_SECRET`
-4. Teste avec "Execute Workflow" puis vérifie dans ton admin : les annonces arrivent.
+2. Dans n8n : **Workflows → Import from File** → `pige-n8n-workflow-v3.json`
+3. Dans le workflow, remplace `TON_PIGE_INGEST_SECRET` (présent dans les 2 nodes HTTP) par ce secret.
+4. Désactive le cron interne : `PIGE_CRON=false` + `pm2 restart immo-api`
+   (sinon double collecte = double coût Apify).
+5. Teste avec "Execute Workflow" puis vérifie `/api/admin/pige/runs`.
+
+Historique : les anciens workflows (`pige-n8n-workflow.json`, `pige-n8n-workflow-v2.json`)
+poussaient n8n à POSTer l'input brute vers `clearpath/leboncoin-immobilier` — schéma
+obsolète + credentials LBC ⇒ l'actor plantait en cron (~45-60 s d'erreur) sans qu'on
+le voie côté app. Supprime-les dans n8n au profit de la v3.
 
 Le node final POST ce payload (l'API filtre les particuliers et dédoublonne) :
 

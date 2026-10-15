@@ -29,6 +29,20 @@ pigeIngestRouter.get('/recherches', async (req, res) => {
   res.json(recherches);
 });
 
+// Exécuter une recherche depuis n8n (même chemin de code que le run manuel admin) :
+// n8n ne parle JAMAIS à Apify directement — plus de token/credentials/schéma d'actor
+// à maintenir en double, plus d'écart "manuel OK / cron KO". Les runs ratés sont
+// tracés dans PigeRun donc visibles dans l'admin.
+pigeIngestRouter.post('/recherches/:id/run', async (req, res) => {
+  if (!requirePigeIngestSecret(req, res)) return;
+  try {
+    const result = await executerRecherche(Number(req.params.id));
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err.message ?? err) });
+  }
+});
+
 pigeIngestRouter.get('/schedule-config', async (req, res) => {
   const recherches = await prisma.pigeRecherche.findMany({
     where: { active: true, source: 'leboncoin' },

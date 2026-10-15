@@ -1,0 +1,123 @@
+{
+  "name": "Pige Immo v3 - Leboncoin (runs délégués à l'API)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9,15,22 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-lbc",
+      "name": "Cron Leboncoin (3x/jour)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-600, -100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://app.ambassadeur-immo.com/api/pige/recherches",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Ingest-Secret",
+              "value": "TON_PIGE_INGEST_SECRET"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "charger-recherches",
+      "name": "Charger recherches actives",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-380, -100],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://app.ambassadeur-immo.com/api/pige/recherches/{{ $json.id }}/run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Ingest-Secret",
+              "value": "TON_PIGE_INGEST_SECRET"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "run-recherche",
+      "name": "Exécuter chaque recherche",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-150, -100],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all();\nconst oks = rows.filter((r) => r.json && r.json.ok);\nconst kos = rows.filter((r) => !r.json || !r.json.ok);\nreturn [{ json: {\n  recherches: rows.length,\n  ok: oks.length,\n  echecs: kos.length,\n  nouveaux: oks.reduce((s, r) => s + (r.json.nouveaux || 0), 0),\n  maj: oks.reduce((s, r) => s + (r.json.maj || 0), 0),\n  telephones: oks.reduce((s, r) => s + (r.json.telephones || 0), 0),\n  erreurs: kos.map((r) => (r.json && r.json.error) || 'erreur inconnue'),\n} }];"
+      },
+      "id": "resume",
+      "name": "Résumé du run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, -100]
+    }
+  ],
+  "connections": {
+    "Cron Leboncoin (3x/jour)": {
+      "main": [
+        [
+          {
+            "node": "Charger recherches actives",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Charger recherches actives": {
+      "main": [
+        [
+          {
+            "node": "Exécuter chaque recherche",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exécuter chaque recherche": {
+      "main": [
+        [
+          {
+            "node": "Résumé du run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
