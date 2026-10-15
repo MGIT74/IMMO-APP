@@ -361,6 +361,15 @@ export async function executerRecherche(rechercheId) {
     const rechercheAvecZone = { ...recherche, _zone: cfg.city ?? cfg.location ?? recherche.nom };
     const stats = await ingestItems(rechercheAvecZone, items);
 
+    // Photos : les annonces sans image sont enrichies en arrière-plan (acteur d'enrichissement).
+    // Fire-and-forget : n'attend pas la réponse du run (~1-2 min), ne bloque pas le bouton.
+    import('./photos.js')
+      .then((m) => m.backfillPhotosManquantes(100))
+      .then((r) => {
+        if (r?.maj) console.log(`[pige] photos backfill : ${r.maj} annonce(s) enrichie(s)`);
+      })
+      .catch((e) => console.error('[pige] photos backfill erreur :', String(e.message ?? e)));
+
     await prisma.pigeRun.update({
       where: { id: runRow.id },
       data: {
