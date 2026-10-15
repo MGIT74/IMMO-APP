@@ -7,13 +7,17 @@ export const leadsAdminRouter = Router();
 
 // --- PUBLIC : un visiteur envoie une demande d'information ---
 leadsPublicRouter.post('/', async (req, res) => {
-  const { bienId, nom, email, tel, message, website } = req.body;
+  const { bienId, nom, email, tel, message, website, consent } = req.body;
 
   // Piège à robots : si ce champ caché est rempli, on ignore silencieusement.
   if (website) return res.status(201).json({ ok: true });
 
   if (!nom || (!email && !tel)) {
     return res.status(400).json({ error: 'Merci de renseigner votre nom et un email ou un téléphone.' });
+  }
+  // RGPD : consentement requis (case à cocher du formulaire)
+  if (!consent) {
+    return res.status(400).json({ error: 'Merci de cocher la case de consentement pour envoyer votre demande.' });
   }
 
   const lead = await prisma.lead.create({
@@ -24,6 +28,7 @@ leadsPublicRouter.post('/', async (req, res) => {
       tel: tel || null,
       message: message || null,
       source: 'site',
+      consent: consent === true,
     },
   });
 

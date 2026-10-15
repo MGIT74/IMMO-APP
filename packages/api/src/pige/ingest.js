@@ -1,5 +1,5 @@
 import { prisma } from '../db.js';
-import { runActor, estimateCost } from './apify.js';
+import { runActor, estimateCost, zonesPourRecherche } from './apify.js';
 
 /* ---------- Helpers ---------- */
 
@@ -355,11 +355,26 @@ export async function executerRecherche(rechercheId) {
   });
 
   try {
-    const { apifyRunId, items, usageTotalUsd } = await runActor(recherche);
-    // Zone pour la détection d'enlèvement : city/location de la recherche (ex "Annemasse 74100")
-    const cfg = recherche.apifyInput ?? {};
-    const rechercheAvecZone = { ...recherche, _zone: cfg.city ?? cfg.location ?? recherche.nom };
-    const stats = await ingestItems(rechercheAvecZone, items);
+    // Un run Apify par commune du rayon (séquentiels : compat plan gratuit = 1 run
+    // simultané). La zone de suivi d'enlèvement est la commune scannée.
+    const zones = zonesPourRecherche(recherche);
+    let total = 0, nouveaux = 0, maj = 0, telephones = 0, cout = 0;
+    const apifyRunIds = [];
+
+    for (const ville of zones) {
+      const { apifyRunId, items, usageTotalUsd } = await runActor(recherche, ville);
+      apifyRunIds.push(apifyRunId);
+
+      const cfg = recherche.apifyInput ?? {};
+      const rechercheAvecZone = { ...recherche, _zone: ville ?? cfg.city ?? cfg.location ?? recherche.nom };
+      const stats = await ingestItems(rechercheAvecZone, items);
+
+      total += items.length;
+      nouveaux += stats.nouveaux;
+      maj += stats.maj;
+      telephones += stats.telephones;
+      cout += usageTotalUsd ?? estimateCost(recherche, { annonces: items.length, telephones: stats.telephones });
+    }
 
     // Photos : les annonces sans image sont enrichies en arrière-plan (acteur d'enrichissement).
     // Fire-and-forget : n'attend pas la réponse du run (~1-2 min), ne bloque pas le bouton.
@@ -374,11 +389,11 @@ export async function executerRecherche(rechercheId) {
       where: { id: runRow.id },
       data: {
         statut: 'ok',
-        apifyRunId,
-        annoncesRecues: items.length,
-        annoncesNouvelles: stats.nouveaux,
-        annoncesMaj: stats.maj,
-        coutUsd: usageTotalUsd ?? estimateCost(recherche, { annonces: items.length, telephones: stats.telephones }),
+        apifyRunId: apifyRunIds.join(','),
+        annoncesRecues: total,
+        annoncesNouvelles: nouveaux,
+        annoncesMaj: maj,
+        coutUsd: cout,
         finishedAt: new Date(),
       },
     });
@@ -386,7 +401,7 @@ export async function executerRecherche(rechercheId) {
       where: { id: rechercheId },
       data: { derniereRun: new Date() },
     });
-    return { runId: runRow.id, ...stats, total: items.length };
+    return { runId: runRow.id, zones: zones.filter(Boolean).length || zones.length, nouveaux, maj, telephones, total };
   } catch (err) {
     await prisma.pigeRun.update({
       where: { id: runRow.id },

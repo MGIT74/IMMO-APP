@@ -958,6 +958,15 @@ body.nav-open { overflow: hidden; }
 @keyframes popCheck { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
 .dl-cta-submit.is-sent svg, .home-lead-form button.is-sent svg { animation: popCheck .35s cubic-bezier(.2,.9,.3,1.4); }
 
+/* --- Consentement RGPD (cases des formulaires) --- */
+.consent-row {
+	display: flex; align-items: flex-start; gap: 8px;
+	font-size: 12.5px; line-height: 1.5; color: #8b929c;
+	cursor: pointer; text-align: left;
+}
+.consent-row input { width: 15px; height: 15px; margin-top: 1px; accent-color: #1d9d5c; flex: none; cursor: pointer; }
+.consent-row a { color: inherit; text-decoration: underline; }
+
 /* --- Contact : bannière sombre --- */
 .contact-wrap { padding-top: 30px; }
 .home-lead-form {

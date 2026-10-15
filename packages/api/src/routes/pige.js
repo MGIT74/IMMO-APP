@@ -43,6 +43,40 @@ pigeIngestRouter.post('/recherches/:id/run', async (req, res) => {
   }
 });
 
+// Résumé quotidien pour alertes : les compteurs 24h + incidents (n8n rapatrie et envoie l'email)
+pigeIngestRouter.get('/rapport', async (req, res) => {
+  if (!requirePigeIngestSecret(req, res)) return;
+  const depuis = new Date(Date.now() - 24 * 864e5);
+  const [nouveaux, baisses, enlevements, telsRev, runsAgg, sansPhoto] = await Promise.all([
+    prisma.pigeAnnonce.count({ where: { createdAt: { gte: depuis } } }),
+    prisma.pigeEvenement.findMany({
+      where: { type: 'baisse_prix', createdAt: { gte: depuis } },
+      include: { annonce: { select: { titre: true, url: true, ville: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.pigeEvenement.count({ where: { type: 'enlevement', createdAt: { gte: depuis } } }),
+    prisma.pigeEvenement.count({ where: { type: 'tel_obtenu', createdAt: { gte: depuis } } }),
+    prisma.pigeRun.aggregate({ where: { startedAt: { gte: depuis } }, _sum: { coutUsd: true }, _count: true }),
+    prisma.pigeAnnonce.count({ where: { photoUrl: null, enleve: false } }),
+  ]);
+  res.json({
+    nouveaux24h: nouveaux,
+    baissesPrix: baisses.map((b) => ({
+      annonceId: b.annonceId,
+      titre: b.annonce?.titre ?? null,
+      ville: b.annonce?.ville ?? null,
+      url: b.annonce?.url ?? null,
+      nouveauPrix: b.valeur ?? null,
+      detail: b.detail ?? null,
+    })),
+    enlevements24h: enlevements,
+    telephonesReveles: telsRev,
+    runs24h: runsAgg._count ?? 0,
+    coutUsd24h: runsAgg._sum?.coutUsd ?? 0,
+    annoncesSansPhoto: sansPhoto,
+  });
+});
+
 pigeIngestRouter.get('/schedule-config', async (req, res) => {
   const recherches = await prisma.pigeRecherche.findMany({
     where: { active: true, source: 'leboncoin' },
@@ -225,6 +259,49 @@ pigeAdminRouter.post('/recherches/:id/run', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: String(err.message ?? err) });
   }
+});
+
+// Convertir une annonce pigeon en fiche Bien du site (préremplie, non publiée)
+pigeAdminRouter.post('/annonces/:id/convertir', async (req, res) => {
+  const annonce = await prisma.pigeAnnonce.findUnique({
+    where: { id: Number(req.params.id) },
+    include: { contact: true },
+  });
+  if (!annonce) return res.status(404).json({ error: 'Annonce introuvable.' });
+  if (annonce.bienId) return res.json({ ok: true, bienId: annonce.bienId, dejaConverti: true });
+
+  const photos = [
+    ...(Array.isArray(annonce.photosJson) ? annonce.photosJson : []),
+    ...(annonce.photoUrl ? [annonce.photoUrl] : []),
+  ].filter((u) => typeof u === 'string' && u)
+    .filter((u, i, arr) => arr.indexOf(u) === i)
+    .slice(0, 15);
+
+  const bien = await prisma.bien.create({
+    data: {
+      titre: annonce.titre || `${annonce.typeBien || 'Bien'} ${annonce.ville || ''}`.trim(),
+      type: annonce.typeBien || 'Appartement',
+      categorie: 'ancien',
+      prix: annonce.prix ?? 0,
+      ville: annonce.ville,
+      codePostal: annonce.cp,
+      surface: annonce.surface,
+      pieces: annonce.pieces,
+      chambres: annonce.chambres,
+      dpeLettre: annonce.dpe,
+      gesLettre: annonce.ges,
+      description: annonce.texte ? annonce.texte.slice(0, 20000) : null,
+      publie: false, // publication uniquement après vérification dans le formulaire Bien
+      boutonTexte: 'Voir l\'annonce d\'origine',
+      boutonUrl: annonce.url,
+      ...(photos.length ? { photos: { create: photos.map((u, i) => ({ url: u, ordre: i })) } } : {}),
+    },
+  });
+  await prisma.pigeAnnonce.update({ where: { id: annonce.id }, data: { bienId: bien.id } });
+  await prisma.pigeEvenement.create({
+    data: { annonceId: annonce.id, type: 'note', detail: `Converti en Bien #${bien.id} (non publié)` },
+  });
+  res.status(201).json({ ok: true, bienId: bien.id });
 });
 
 /* ---------- Annonces avec filtres ---------- */

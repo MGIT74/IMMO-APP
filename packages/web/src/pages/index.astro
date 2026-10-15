@@ -164,6 +164,10 @@ const biens = await getBiens();
 					<input name="nom" placeholder="Votre nom" required />
 					<input name="contact" placeholder="Téléphone ou email" required />
 					<textarea name="message" rows="3" placeholder="Votre projet : vente, achat, estimation…"></textarea>
+					<label class="consent-row">
+						<input type="checkbox" name="consent" required />
+						<span>J'accepte que mes informations soient utilisées pour me recontacter (<a href="/politique-de-confidentialite">politique de confidentialité</a>).</span>
+					</label>
 					<button type="submit">Envoyer <span class="cta-arrow">→</span></button>
 					<p class="home-lead-feedback" id="home-lead-feedback"></p>
 				</form>
@@ -195,6 +199,7 @@ const biens = await getBiens();
 					message: data.message || null,
 					website: data.website || undefined,
 					bienId: null,
+					consent: data.consent === 'on',
 					...(String(data.contact || '').includes('@')
 						? { email: data.contact }
 						: { tel: data.contact }),

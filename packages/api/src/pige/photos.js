@@ -1,5 +1,6 @@
 import { prisma } from '../db.js';
 import { ApifyClient } from 'apify-client';
+import { idDepuisUrl } from './apify.js';
 
 // Acteur d'enrichissement photo (0,8 $/1000 annonces)
 // IMPORTANT : `adIds` en IDs NUMÉRIQUES + `browseMode: true` est la seule
@@ -20,11 +21,6 @@ export function backfillPhotosManquantes(limit = 100) {
   if (enCours) return enCours;
   enCours = _backfill(limit).finally(() => { enCours = null; });
   return enCours;
-}
-
-function idDepuisUrl(url) {
-  const m = String(url ?? '').match(/\/(\d{6,})(?:[/?]|$)/);
-  return m ? m[1] : null;
 }
 
 async function _backfill(limit = 100) {

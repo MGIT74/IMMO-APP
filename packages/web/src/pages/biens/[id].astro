@@ -333,6 +333,10 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 					<input type="email" name="email" placeholder="Votre email" />
 					<input type="tel" name="tel" placeholder="Votre téléphone" />
 					<textarea name="message" placeholder="Votre message (optionnel)"></textarea>
+					<label class="consent-row">
+						<input type="checkbox" name="consent" required />
+						<span>J'accepte que mes informations soient utilisées pour me recontacter (<a href="/politique-de-confidentialite">politique de confidentialité</a>).</span>
+					</label>
 					<button type="submit" class="dl-cta dl-cta-submit">Envoyer ma demande</button>
 					<p id="lead-feedback" class="dl-feedback"></p>
 				</form>
@@ -457,6 +461,7 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 			submitBtn.classList.add('is-sending');
 			submitBtn.innerHTML = '<span class="send-spinner"></span> Envoi en cours…';
 			const payload = Object.fromEntries(new FormData(form).entries());
+			payload.consent = payload.consent === 'on';
 			try {
 				const res = await fetch(API_URL + '/api/leads', {
 					method: 'POST',

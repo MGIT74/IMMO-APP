@@ -15,17 +15,44 @@ export const ACTORS = {
   seloger: 'lexis-solutions/seloger-scraper',
 };
 
+/** Extrait l'ID numérique d'une URL Leboncoin (…/ad/ventes_immobilieres/3288286508 → "3288286508") */
+export function idDepuisUrl(url) {
+  const m = String(url ?? '').match(/\/(\d{6,})(?:[/?]|$)/);
+  return m ? m[1] : null;
+}
+
+/**
+ * Zones à scanner pour une recherche : les communes du rayon si elles existent
+ * (cfg.communes, alimenté par /zone-communes), sinon la ville/city de la config.
+ * Une sortie par élément → le suivi d'enlèvement est fait PAR COMMUNE
+ * (l'ancien workflow n8n scannait aussi chaque commune, on garde la même couverture).
+ * null = pas de notion de zone (seloger) : un seul run.
+ */
+export function zonesPourRecherche(recherche) {
+  const cfg = recherche.apifyInput || {};
+  if (recherche.source === 'seloger') return [null];
+
+  const communes = Array.isArray(cfg.communes) && cfg.communes.length ? cfg.communes : null;
+  const noms = (communes ?? [])
+    .map((c) => (typeof c === 'string' ? c : c?.nom) ?? '')
+    .map((n) => n.replace(/\s*\d{5}.*$/, '').trim())
+    .filter(Boolean);
+  if (noms.length) return noms;
+  return [cfg.city ?? cfg.centre ?? cfg.location ?? recherche.nom].filter(Boolean);
+}
+
 /**
  * Construit l'input d'actor selon la source.
  * recherche.apifyInput contient les critères bruts — les anciens formats
  * (clearpath : location/adLimit/communes) sont traduits vers le schéma de l'actor.
+ * `ville` = commune courante du scan (voir zonesPourRecherche).
  */
-export function buildActorInput(recherche) {
+export function buildActorInput(recherche, ville = null) {
   const cfg = recherche.apifyInput || {};
 
   if (recherche.source === 'leboncoin') {
     return {
-      city: cfg.city ?? cfg.centre ?? cfg.location ?? 'Paris',
+      city: ville ?? cfg.city ?? cfg.centre ?? cfg.location ?? 'Paris',
       owner_type: 'private',
       // only_with_phone FALSE : on garde TOUTES les annonces (CRM complet) ;
       // les numéros trouvés sont révélés de toute façon — sinon le tracking
@@ -47,10 +74,10 @@ export function buildActorInput(recherche) {
 /**
  * Lance l'actor Apify et attend la fin du run, puis renvoie le dataset.
  */
-export async function runActor(recherche) {
+export async function runActor(recherche, ville = null) {
   const client = getClient();
   const actorId = ACTORS[recherche.source];
-  const input = buildActorInput(recherche);
+  const input = buildActorInput(recherche, ville);
 
   const run = await client.actor(actorId).call(input, { maxItems: input.max_items || 200 });
 

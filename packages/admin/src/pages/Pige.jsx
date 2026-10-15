@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { I as Ic0, MiniIcon, PATHS } from '../lib/icons.jsx';
 const I = Ic0;
@@ -273,6 +274,7 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
   const [a, setA] = useState(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get(`/api/admin/pige/annonces/${annonceId}`).then((d) => {
@@ -284,6 +286,17 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
   if (!a) return <div className="drawer"><div className="drawer-panel">Chargement…</div></div>;
 
   const info = statutInfo(a.statut);
+
+  async function convertirEnBien() {
+    setBusy(true);
+    const d = await api.post(`/api/admin/pige/annonces/${a.id}/convertir`, {});
+    if (d?.bienId) {
+      onChanged?.();
+      navigate(`/biens/${d.bienId}/edit`);
+      return;
+    }
+    setBusy(false);
+  }
 
   async function patchStatut(payload) {
     setBusy(true);
@@ -342,6 +355,15 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
           <button className={a.estFavori ? 'btn-mini on' : 'btn-mini'} onClick={() => patchStatut({ estFavori: !a.estFavori })}>
             {a.estFavori ? '★ Favori' : '☆ Favori'}
           </button>
+          {a.bienId ? (
+            <button className="btn-mini on" onClick={() => navigate(`/biens/${a.bienId}/edit`)} title="Fiche Bien créée à partir de cette annonce">
+              ✅ Bien #{a.bienId}
+            </button>
+          ) : (
+            <button className="btn-mini" disabled={busy} onClick={convertirEnBien} title="Crée une fiche Bien préremplie (non publiée) à partir de cette annonce">
+              📦 Convertir en bien
+            </button>
+          )}
           <span className="badge-repub"><MiniIcon d={PATHS.repeat} size={11} /> Republications : {a.nbRepubs}</span>
           {a.dpe && <span className="mini-badge dpe">DPE {a.dpe}</span>}
         </div>
