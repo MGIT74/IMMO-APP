@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { executerRecherche, ingestParSource } from '../pige/ingest.js';
+import { backfillPhotosManquantes } from '../pige/photos.js';
 
 export const pigeAdminRouter = Router();
 
@@ -117,6 +118,19 @@ pigeIngestRouter.get('/photos-manquantes', async (req, res) => {
     take: limit,
   });
   res.json(rows);
+});
+
+// Lance le backfill des photos manquantes à la demande (n8n, ou correction manuelle).
+// Débounce : appels en rafale → un seul run Apify.
+pigeIngestRouter.post('/photos-backfill', async (req, res) => {
+  if (!requirePigeIngestSecret(req, res)) return;
+  try {
+    const limit = Math.min(Number(req.body?.limit) || 100, 200);
+    const r = await backfillPhotosManquantes(limit);
+    res.json({ ok: true, ...r });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err.message ?? err) });
+  }
 });
 
 // Reçoit les photos récupérées par l'acteur d'enrichissement (url → images[])
