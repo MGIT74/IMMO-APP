@@ -144,40 +144,6 @@ function jolifierZone(k) {
   return k.split('-').map((w, i) => (i > 0 && petits.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join('-');
 }
 
-/* ---------- Carte tension du marché par zone ---------- */
-function TensionZones({ zones }) {
-  if (!zones?.length) return null;
-  return (
-    <div className="card tension-card">
-      <h3>Temps de vente par zone <span className="muted" style={{ fontSize: 12, fontWeight: 400 }}>(calculé sur les sorties définitives — un retrait avec republication n'est PAS compté comme une vente)</span></h3>
-      <div className="tension-rows">
-        {zones.map((z) => {
-          const ind = INDICE_LABEL[z.indice] || INDICE_LABEL.inconnu;
-          return (
-            <div key={z.zone} className="tension-row">
-              <div className="tension-zone"><b>{jolifierZone(z.zone)}</b><span className="muted">{z.actifs} en ligne · {z.total} collectées</span></div>
-              <div className="tension-bar-track">
-                <div className="tension-bar" style={{ width: `${Math.min(z.pctRapides ?? 0, 100)}%`, background: z.indice === 'chaud' ? '#e02d3c' : z.indice === 'tiede' ? '#f59e0b' : '#94a3b8' }}></div>
-              </div>
-              <div className="tension-metrics">
-                <b>{z.medianeJours != null ? `${z.medianeJours} j` : '—'}</b>
-                <span className="muted">médian</span>
-                <span className="tension-chip" style={{ background: ind.bg, color: ind.color }}>{ind.txt}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="tension-legende">
-        <span><b style={{ color: '#0e9f6e' }}>Sorties = ventes probables</b></span>
-        <span><b style={{ color: '#b45309' }}>Repositionnement = retiré puis republicé (exclu du calcul)</b></span>
-        <span><b style={{ color: '#64748b' }}>En attente</b></span>
-        <span className="muted">% = part sorties en ≤ 10 j · min. 5 sorties pour un indice · patience 14 j après retrait</span>
-      </div>
-    </div>
-  );
-}
-
 /* ---------- Carte annonce (style Dribbble) ---------- */
 function CarteAnnonce({ a, onOpen, onFavori }) {
   const info = statutInfo(a.statut);
@@ -707,7 +673,6 @@ export default function Pige() {
       )}
 
       {/* Tension du marché par zone */}
-      {!filtres.depublie && <TensionZones zones={tension} />}
 
       {/* Pipeline cliquable */}
       {stats?.parStatut && !filtres.depublie && (
