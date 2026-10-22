@@ -20,7 +20,8 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 
 // Sert les photos uploadées directement (en prod, mettez plutôt Nginx devant ce dossier).
-app.use('/uploads', express.static(path.resolve('uploads')));
+const uploadsRoot = process.env.UPLOADS_DIR || path.resolve('uploads');
+app.use('/uploads', express.static(uploadsRoot));
 
 // --- Routes publiques (site vitrine Astro) ---
 app.use('/api/biens', biensPublicRouter);
