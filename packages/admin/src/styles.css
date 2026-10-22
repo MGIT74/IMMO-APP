@@ -417,3 +417,28 @@ button.danger { background: #e53935; }
 	margin-right: 6px;
 }
 .jevt { width: 22px; text-align: center; flex-shrink: 0; font-weight: 700; color: #6b7280; }
+
+
+/* Pige — cartes KPI modernes */
+.pige-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0}
+.pige-kpi-card{background:#fff;border:1px solid #e7eaf0;border-radius:20px;padding:22px 24px;box-shadow:0 5px 20px rgba(15,23,42,.035);min-width:0}
+.pige-kpi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.pige-kpi-icon{display:grid;place-items:center;width:43px;height:43px;border-radius:13px;font-size:24px;font-weight:700}
+.pige-kpi-icon.purple{background:#eef2ff;color:#6366f1}.pige-kpi-icon.amber{background:#fff7ed;color:#ea580c}.pige-kpi-icon.green{background:#ecfdf5;color:#059669}
+.pige-kpi-tag{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#64748b;background:#f3f5f8;padding:7px 10px;border-radius:999px}
+.pige-kpi-label{font-size:14px;color:#64748b;font-weight:600}.pige-kpi-number{font-size:clamp(32px,3vw,44px);line-height:1.15;letter-spacing:-.05em;font-weight:800;color:#111827;margin:8px 0 5px;font-variant-numeric:tabular-nums}
+.pige-kpi-caption{font-size:12px;color:#94a3b8;margin-bottom:20px}
+.pige-kpi-stacked{height:9px;border-radius:20px;background:#edf0f5;overflow:hidden;display:flex;margin-bottom:18px}
+.pige-kpi-stacked span{height:100%;min-width:0}
+.pige-kpi-details{display:flex;flex-direction:column;gap:12px}
+.pige-kpi-line{display:flex;align-items:center;gap:9px;width:100%;font-size:12px;color:#475569;background:transparent;border:0;padding:0;text-align:left}
+button.pige-kpi-line{cursor:pointer}button.pige-kpi-line:hover{color:#111827}
+.pige-kpi-line strong{margin-left:auto;color:#0f172a;font-size:13px;font-variant-numeric:tabular-nums}
+.pige-kpi-dot{width:8px;height:8px;flex:none;border-radius:50%}
+.pige-kpi-metric-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#475569;margin-bottom:7px}
+.pige-kpi-metric-heading span{display:flex;align-items:center;gap:8px}.pige-kpi-metric-heading i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pige-kpi-metric-heading strong{color:#111827;font-variant-numeric:tabular-nums}
+.pige-kpi-track{height:7px;background:#eef1f5;border-radius:99px;overflow:hidden}.pige-kpi-track span{display:block;height:100%;border-radius:99px;transition:width .3s ease}.pige-kpi-track.prominent{height:10px;margin:4px 0 20px}
+.pige-kpi-cost{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #eef0f4;padding-top:16px;margin-top:4px;font-size:12px;color:#64748b}.pige-kpi-cost strong{font-size:17px;color:#111827;font-variant-numeric:tabular-nums}
+@media(max-width:1100px){.pige-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.pige-kpi-grid{grid-template-columns:1fr}.pige-kpi-card{padding:20px}}
