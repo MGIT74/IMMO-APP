@@ -17,15 +17,15 @@ export default function Agenda() {
   const [time, setTime] = useState('10:00');
   async function refresh() {
     setBusy(true); setError('');
-    try { setItems(await api.get('/api/admin/pige/agenda')); }
-    catch(e) { setError(e.message || 'Impossible de charger les rappels'); }
+    try { const data = await api.get('/api/admin/pige/agenda'); if (!Array.isArray(data)) throw new Error('Réponse API invalide'); setItems(data); }
+    catch(e) { setError('Impossible de charger les rappels. Vérifiez que packages/api est bien redéployé sur xCloud (route /api/admin/pige/agenda). Détail : ' + (e.message || 'Erreur réseau')); }
     finally { setBusy(false); }
   }
   useEffect(() => { refresh(); }, []);
   const today = dateKey(new Date());
   const count = items.filter(x => x.rappelAt && dateKey(new Date(x.rappelAt)) === today).length;
-  const late = items.filter(x => x.rappelAt && new Date(x.rappelAt) < new Date()).length;
-  const upcoming = items.filter(x => x.rappelAt && new Date(x.rappelAt) >= new Date()).length;
+  const late = items.filter(x => x.rappelAt && dateKey(new Date(x.rappelAt)) < today).length;
+  const upcoming = items.filter(x => x.rappelAt && dateKey(new Date(x.rappelAt)) > today).length;
   const start = new Date(month.getFullYear(), month.getMonth(), 1);
   const offset = (start.getDay() + 6) % 7;
   const days = Array.from({length: 42}, (_,i) => new Date(month.getFullYear(),month.getMonth(),i-offset+1));
