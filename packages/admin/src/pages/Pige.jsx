@@ -362,7 +362,7 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
 
         <div className="card-sec" style={{ marginBottom: 14 }}>
           <h4>Mémo commercial</h4>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+          <textarea style={{ display: 'block', width: '100%', minHeight: 120, boxSizing: 'border-box', resize: 'vertical' }} value={note} onChange={(e) => setNote(e.target.value)} rows={4}
             placeholder="Ex : appelé le 5/10, rappeler le 12 — vendeur pressé, discutable à -5%…" />
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             <button className="btn-mini" disabled={busy} onClick={saveNote}>💾 Enregistrer la note</button>
