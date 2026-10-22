@@ -7,6 +7,7 @@ import Leads from './pages/Leads.jsx';
 import Settings from './pages/Settings.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Pige from './pages/Pige.jsx';
+import Agenda from './pages/Agenda.jsx';
 
 function ProtectedRoute({ children }) {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -43,6 +44,7 @@ function IconReglages() {
     </svg>
   );
 }
+function IconAgenda() { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 15h3"/></svg>; }
 function IconLogout() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -60,6 +62,7 @@ function Shell({ children }) {
         <NavLink to="/dashboard"><IconDashboard /><span>Tableau de bord</span></NavLink>
         <NavLink to="/leads"><IconDemandes /><span>Demandes</span></NavLink>
         <NavLink to="/pige"><IconDemandes /><span>Pige</span></NavLink>
+        <NavLink to="/agenda"><IconAgenda /><span>Agenda</span></NavLink>
         <NavLink to="/settings"><IconReglages /><span>Réglages</span></NavLink>
         <button
           className="logout-btn"
@@ -129,6 +132,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/agenda" element={<ProtectedRoute><Shell><Agenda /></Shell></ProtectedRoute>} />
         <Route
           path="/settings"
           element={
