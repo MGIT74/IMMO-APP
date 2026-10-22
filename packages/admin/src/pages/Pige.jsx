@@ -618,61 +618,48 @@ export default function Pige() {
         </div>
       </div>
 
-      {/* Top stats style Dribbble : 3 cartes avec mini-barres */}
+      {/* Tableau de bord Pige : indicateurs lisibles et barres proportionnelles */}
       {stats && (
-        <div className="stat-cards pige-top">
-          <div className="stat-card top-card">
-            <div className="top-card-head"><span>Annonces suivies</span><b>{stats.totalAnnonces}</b></div>
-            <div className="top-card-body">
-              <MiniBarres data={[
-                { label: 'Favoris', v: stats.parStatut ? Object.values(stats.parStatut).reduce((s, x) => s + x, 0) : 0, color: '#6366f1' },
-                { label: 'Avec tél.', v: stats.avecTelephone, color: '#10b981' },
-                { label: 'Republiées', v: stats.republicees, color: '#f59e0b' },
-              ]} />
-              <div className="top-list">
-                {STATUTS.map((st) => (
-                  <div key={st.key} className="top-list-row" style={{ cursor: 'pointer' }}
-                    onClick={() => setFiltres({ ...filtres, statut: filtres.statut === st.key ? '' : st.key })}>
-                    <span className="dot" style={{ background: st.color }}></span>
-                    {st.label} <b style={{ marginLeft: 'auto' }}>{stats.parStatut?.[st.key] || 0}</b>
-                  </div>
-                ))}
-              </div>
+        <div className="pige-kpi-grid">
+          <section className="pige-kpi-card">
+            <div className="pige-kpi-top"><span className="pige-kpi-icon purple">⌂</span><span className="pige-kpi-tag">Portefeuille</span></div>
+            <div className="pige-kpi-label">Annonces surveillées</div>
+            <div className="pige-kpi-number">{Number(stats.totalAnnonces || 0).toLocaleString('fr-FR')}</div>
+            <div className="pige-kpi-caption">Répartition par statut</div>
+            <div className="pige-kpi-stacked">
+              {STATUTS.map(st => <span key={st.key} style={{ width: `${(stats.parStatut?.[st.key] || 0) / Math.max(1, stats.totalAnnonces || 0) * 100}%`, background: st.color }} />)}
             </div>
-          </div>
-          <div className="stat-card top-card">
-            <div className="top-card-head"><span>Opportunités</span><b>{(stats.baisses7j || 0) + (stats.republicees || 0)}</b></div>
-            <div className="top-card-body">
-              <MiniBarres data={[
-                { label: 'Baisses prix (7j)', v: stats.baisses7j || 0, color: '#10b981' },
-                { label: 'Republiées', v: stats.republicees || 0, color: '#f59e0b' },
-                { label: 'Nouvelles (7j)', v: stats.nouveaux7j || 0, color: '#6366f1' },
-              ]} />
-              <div className="top-list">
-                <div className="top-list-row"><span className="dot" style={{ background: '#10b981' }}></span>Baisse de prix 7j <b style={{ marginLeft: 'auto' }}>{stats.baisses7j || 0}</b></div>
-                <div className="top-list-row"><span className="dot" style={{ background: '#f59e0b' }}></span>Annonces republiées <b style={{ marginLeft: 'auto' }}>{stats.republicees || 0}</b></div>
-                <div className="top-list-row"><span className="dot" style={{ background: '#6366f1' }}></span>Nouvelles 7j <b style={{ marginLeft: 'auto' }}>{stats.nouveaux7j || 0}</b></div>
-              </div>
+            <div className="pige-kpi-details">
+              {STATUTS.map(st => <button key={st.key} type="button" className="pige-kpi-line" onClick={() => setFiltres({ ...filtres, statut: filtres.statut === st.key ? '' : st.key })}><span className="pige-kpi-dot" style={{ background: st.color }} />{st.label}<strong>{stats.parStatut?.[st.key] || 0}</strong></button>)}
             </div>
-          </div>
-          <div className="stat-card top-card">
-            <div className="top-card-head"><span>Téléphones & coûts</span><b>{stats.avecTelephone}</b></div>
-            <div className="top-card-body">
-              <MiniBarres data={[
-                { label: 'Téléphones', v: stats.avecTelephone, color: '#10b981' },
-                { label: 'Sans tél', v: (stats.totalAnnonces || 0) - (stats.avecTelephone || 0), color: '#e5e7eb' },
-                { label: 'Runs', v: (runs && runs.length) || 0, color: '#8b5cf6' },
-              ]} />
-              <div className="top-list">
-                <div className="top-list-row"><span className="dot" style={{ background: '#10b981' }}></span>Avec téléphone <b style={{ marginLeft: 'auto' }}>{stats.avecTelephone}</b></div>
-                <div className="top-list-row"><span className="dot" style={{ background: '#9aa3b2' }}></span>Coût Apify <b style={{ marginLeft: 'auto' }}>${Number(stats.coutTotalUsd).toFixed(2)}</b></div>
-              </div>
+          </section>
+          <section className="pige-kpi-card">
+            <div className="pige-kpi-top"><span className="pige-kpi-icon amber">↗</span><span className="pige-kpi-tag">7 derniers jours</span></div>
+            <div className="pige-kpi-label">Opportunités détectées</div>
+            <div className="pige-kpi-number">{Number((stats.baisses7j || 0) + (stats.republicees || 0)).toLocaleString('fr-FR')}</div>
+            <div className="pige-kpi-caption">Baisses de prix et republications</div>
+            <div className="pige-kpi-details">
+              {[
+                { label: 'Baisses de prix (7 j)', n: stats.baisses7j || 0, color: '#10b981' },
+                { label: 'Annonces republiées', n: stats.republicees || 0, color: '#f59e0b' },
+                { label: 'Nouvelles annonces (7 j)', n: stats.nouveaux7j || 0, color: '#6366f1' },
+              ].map(row => <div className="pige-kpi-metric" key={row.label}><div className="pige-kpi-metric-heading"><span><i style={{ background: row.color }} />{row.label}</span><strong>{row.n}</strong></div><div className="pige-kpi-track"><span style={{ width: `${row.n / Math.max(1, stats.baisses7j || 0, stats.republicees || 0, stats.nouveaux7j || 0) * 100}%`, background: row.color }} /></div></div>)}
             </div>
-          </div>
+          </section>
+          <section className="pige-kpi-card">
+            <div className="pige-kpi-top"><span className="pige-kpi-icon green">☎</span><span className="pige-kpi-tag">Contacts</span></div>
+            <div className="pige-kpi-label">Téléphones disponibles</div>
+            <div className="pige-kpi-number">{Number(stats.avecTelephone || 0).toLocaleString('fr-FR')}</div>
+            <div className="pige-kpi-caption">{Math.round((stats.avecTelephone || 0) / Math.max(1, stats.totalAnnonces || 0) * 100)} % des annonces suivies</div>
+            <div className="pige-kpi-track prominent"><span style={{ width: `${Math.min(100, (stats.avecTelephone || 0) / Math.max(1, stats.totalAnnonces || 0) * 100)}%`, background: '#10b981' }} /></div>
+            <div className="pige-kpi-details">
+              <div className="pige-kpi-line"><span className="pige-kpi-dot" style={{ background: '#10b981' }} />Avec téléphone<strong>{stats.avecTelephone || 0}</strong></div>
+              <div className="pige-kpi-line"><span className="pige-kpi-dot" style={{ background: '#cbd5e1' }} />Sans téléphone<strong>{Math.max(0, (stats.totalAnnonces || 0) - (stats.avecTelephone || 0))}</strong></div>
+              <div className="pige-kpi-cost"><span>Coût Apify enregistré</span><strong>${Number(stats.coutTotalUsd || 0).toFixed(2)}</strong></div>
+            </div>
+          </section>
         </div>
       )}
-
-      {/* Tension du marché par zone */}
 
       {/* Pipeline cliquable */}
       {stats?.parStatut && !filtres.depublie && (
