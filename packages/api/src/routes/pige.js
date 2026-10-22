@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -102,6 +104,48 @@ pigeIngestRouter.post('/ingest', async (req, res) => {
     res.json({ ok: true, ...stats });
   } catch (err) {
     res.status(500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// Audit des photos locales perdues après un déploiement. Sans appel Apify ni suppression de fichiers.
+// dry-run par défaut ; apply=true réinitialise uniquement les références de fichiers locaux absents.
+pigeIngestRouter.post('/photos-audit', async (req, res) => {
+  if (!requirePigeIngestSecret(req, res)) return;
+  try {
+    const root = path.resolve(process.env.UPLOADS_DIR || 'uploads');
+    const base = (process.env.UPLOADS_PUBLIC_URL || 'https://api.ambassadeur-immo.com').replace(/\/$/, '');
+    const apply = req.body?.apply === true;
+    const rows = await prisma.pigeAnnonce.findMany({
+      where: { photoUrl: { not: null } },
+      select: { id: true, photoUrl: true, photosJson: true },
+    });
+    let missing = 0, repaired = 0;
+    const sample = [];
+    for (const row of rows) {
+      const url = row.photoUrl;
+      // Ne traiter que nos propres URLs locales, jamais les URLs externes.
+      if (typeof url !== 'string' || !url.startsWith(base + '/uploads/pige/')) continue;
+      let file;
+      try {
+        const parsed = new URL(url);
+        const filename = decodeURIComponent(parsed.pathname.slice('/uploads/pige/'.length));
+        if (!filename || filename.includes('/') || filename.includes('\\') || filename === '.' || filename === '..') continue;
+        file = path.join(root, 'pige', filename);
+      } catch { continue; }
+      if (fs.existsSync(file)) continue;
+      missing++;
+      if (sample.length < 10) sample.push(row.id);
+      if (apply) {
+        await prisma.pigeAnnonce.update({
+          where: { id: row.id },
+          data: { photoUrl: null, photosJson: null },
+        });
+        repaired++;
+      }
+    }
+    res.json({ ok: true, scanned: rows.length, missing, repaired, apply, sample, next: apply ? 'Les annonces sont éligibles au backfill Apify manuel.' : 'Relancer avec apply=true après vérification.' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err.message || err) });
   }
 });
 
