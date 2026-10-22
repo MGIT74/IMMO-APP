@@ -239,6 +239,8 @@ function CarteAnnonce({ a, onOpen, onFavori }) {
 function DetailAnnonce({ annonceId, onClose, onChanged }) {
   const [a, setA] = useState(null);
   const [note, setNote] = useState('');
+  const [rappelDate, setRappelDate] = useState('');
+  const [rappelTime, setRappelTime] = useState('10:00');
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -281,6 +283,12 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
     setA(await api.get(`/api/admin/pige/annonces/${a.id}`));
     setBusy(false);
     onChanged?.();
+  }
+
+  async function programmerRappel(days = null) {
+    const target = days !== null ? new Date(Date.now() + days * 86400000) : new Date(`${rappelDate}T${rappelTime}:00`);
+    if (Number.isNaN(target.getTime())) return;
+    await patchStatut({ rappelAt: target.toISOString(), statut: 'a_contacter' });
   }
 
   async function journaliserAppel() {
@@ -361,6 +369,18 @@ function DetailAnnonce({ annonceId, onClose, onChanged }) {
         </div>
 
         <div className="card-sec" style={{ marginBottom: 14 }}>
+          <div className="pige-rappel-inline">
+            <div><strong>📅 Prochain rappel</strong><p>{a.rappelAt ? 'Programmé le ' + new Date(a.rappelAt).toLocaleString('fr-FR') : 'Planifier un appel avec ce vendeur'}</p></div>
+            <div className="pige-rappel-controls">
+              <button className="btn-mini" disabled={busy} onClick={() => programmerRappel(1)}>Demain</button>
+              <button className="btn-mini" disabled={busy} onClick={() => programmerRappel(7)}>Dans 7 jours</button>
+              <button className="btn-mini" disabled={busy} onClick={() => programmerRappel(15)}>Dans 15 jours</button>
+              <input type="date" aria-label="Date du rappel" value={rappelDate} onChange={e => setRappelDate(e.target.value)} />
+              <input type="time" aria-label="Heure du rappel" value={rappelTime} onChange={e => setRappelTime(e.target.value)} />
+              <button className="btn-mini" disabled={busy || !rappelDate} onClick={() => programmerRappel()}>Planifier</button>
+              {a.rappelAt && <button className="btn-mini" disabled={busy} onClick={() => patchStatut({ rappelAt: null })}>Annuler le rappel</button>}
+            </div>
+          </div>
           <h4>Mémo commercial</h4>
           <textarea style={{ display: 'block', width: '100%', minHeight: 120, boxSizing: 'border-box', resize: 'vertical' }} value={note} onChange={(e) => setNote(e.target.value)} rows={4}
             placeholder="Ex : appelé le 5/10, rappeler le 12 — vendeur pressé, discutable à -5%…" />
