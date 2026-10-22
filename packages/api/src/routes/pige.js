@@ -321,7 +321,7 @@ pigeAdminRouter.post('/annonces/:id/convertir', async (req, res) => {
 /* ---------- Annonces avec filtres ---------- */
 
 pigeAdminRouter.get('/annonces', async (req, res) => {
-  const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub, depublie, page = 1, perPage = 30 } = req.query;
+  const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub, depublie, avecTel, page = 1, perPage = 30 } = req.query;
 
   const where = {
     ...(cp ? { cp: { startsWith: String(cp).slice(0, 2) } } : {}),
@@ -334,6 +334,7 @@ pigeAdminRouter.get('/annonces', async (req, res) => {
     ...(statut ? { statut: String(statut) } : {}),
     ...(favori === '1' ? { estFavori: true } : {}),
     ...(repub === '1' ? { nbRepubs: { gte: 1 } } : {}),
+    ...(avecTel === '1' ? { contact: { is: { telephone: { not: null, notIn: [''] } } } } : {}),
     ...(depublie === '1' ? { enleve: true } : { enleve: false }),
     ...(prixMin || prixMax ? { prix: { ...(prixMin ? { gte: Number(prixMin) } : {}), ...(prixMax ? { lte: Number(prixMax) } : {}) } } : {}),
     ...(surfMin || surfMax ? { surface: { ...(surfMin ? { gte: Number(surfMin) } : {}), ...(surfMax ? { lte: Number(surfMax) } : {}) } } : {}),
