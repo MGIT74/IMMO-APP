@@ -115,6 +115,8 @@ pigeIngestRouter.post('/photos-audit', async (req, res) => {
     const root = path.resolve(process.env.UPLOADS_DIR || 'uploads');
     const base = (process.env.UPLOADS_PUBLIC_URL || 'https://api.ambassadeur-immo.com').replace(/\/$/, '');
     const apply = req.body?.apply === true;
+    const requestedLimit = Number(req.body?.limit);
+    const limit = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 200) : 200;
     const rows = await prisma.pigeAnnonce.findMany({
       where: { photoUrl: { not: null } },
       select: { id: true, photoUrl: true, photosJson: true },
@@ -135,15 +137,16 @@ pigeIngestRouter.post('/photos-audit', async (req, res) => {
       if (fs.existsSync(file)) continue;
       missing++;
       if (sample.length < 10) sample.push(row.id);
-      if (apply) {
+      if (apply && repaired < limit) {
+        // Préserve intégralement la galerie existante, les contacts et les autres données.
         await prisma.pigeAnnonce.update({
           where: { id: row.id },
-          data: { photoUrl: null, photosJson: null },
+          data: { photoUrl: null },
         });
         repaired++;
       }
     }
-    res.json({ ok: true, scanned: rows.length, missing, repaired, apply, sample, next: apply ? 'Les annonces sont éligibles au backfill Apify manuel.' : 'Relancer avec apply=true après vérification.' });
+    res.json({ ok: true, scanned: rows.length, missing, repaired, apply, limit, sample, next: apply ? 'Références principales corrigées ; galeries conservées. Backfill à lancer séparément.' : 'Vérification sans modification ; apply=true et limit=5 pour tester.' });
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err.message || err) });
   }
