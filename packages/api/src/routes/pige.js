@@ -518,6 +518,19 @@ pigeAdminRouter.post('/annonces/:id/evenements', async (req, res) => {
   res.status(201).json(evt);
 });
 
+/* ---------- Agenda des rappels de prospection ---------- */
+pigeAdminRouter.get('/agenda', async (req, res) => {
+  try {
+    const annonces = await prisma.pigeAnnonce.findMany({
+      where: { rappelAt: { not: null } },
+      select: { id: true, titre: true, ville: true, cp: true, statut: true, rappelAt: true, noteMemo: true, contact: { select: { nom: true, telephone: true } } },
+      orderBy: { rappelAt: 'asc' },
+      take: 1000,
+    });
+    res.json(annonces);
+  } catch (err) { res.status(500).json({ error: 'Impossible de charger les rappels.' }); }
+});
+
 /* ---------- Runs & stats ---------- */
 
 pigeAdminRouter.get('/runs', async (req, res) => {
