@@ -11,7 +11,7 @@ const ENRICHER = 'silentflow/leboncoin-scraper-ppr';
 
 // Les photos sont TÉLÉCHARGÉES sur le serveur (uploads/pige) : img.leboncoin.fr
 // peut expirer/retirer ses URLs — une image locale est permanente.
-const UPLOADS_DIR = path.resolve('uploads/pige');
+const UPLOADS_DIR = path.join(process.env.UPLOADS_DIR || path.resolve('uploads'), 'pige');
 const PUBLIC_BASE = (process.env.UPLOADS_PUBLIC_URL || 'https://api.ambassadeur-immo.com').replace(/\/$/, '');
 const PHOTO_GALERIE_MAX = 15;
 
