@@ -4,7 +4,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { executerRecherche, ingestParSource } from '../pige/ingest.js';
-import { backfillPhotosManquantes } from '../pige/photos.js';
+import { backfillPhotosManquantes, restaurerPhotosExistantes } from '../pige/photos.js';
 
 export const pigeAdminRouter = Router();
 
@@ -165,6 +165,17 @@ pigeIngestRouter.get('/photos-manquantes', async (req, res) => {
     take: limit,
   });
   res.json(rows);
+});
+
+// Tente de restaurer gratuitement des images depuis les URL CDN déjà sauvegardées.
+pigeIngestRouter.post('/photos-restore-local', async (req, res) => {
+  if (!requirePigeIngestSecret(req, res)) return;
+  try {
+    const result = await restaurerPhotosExistantes(req.body?.annonceIds);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ ok: false, error: String(err.message || err) });
+  }
 });
 
 // Lance le backfill des photos manquantes à la demande (n8n, ou correction manuelle).
