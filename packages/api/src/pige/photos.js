@@ -113,3 +113,46 @@ async function telechargerImage(url, nomBase) {
     return null;
   }
 }
+
+// Restauration gratuite depuis les URL d'images déjà enregistrées en base.
+// Ne contacte pas Apify. Autorise uniquement les CDN d'images Leboncoin.
+export async function restaurerPhotosExistantes(annonceIds) {
+  if (!Array.isArray(annonceIds) || annonceIds.length < 1 || annonceIds.length > 5 ||
+      !annonceIds.every(id => Number.isSafeInteger(id) && id > 0)) {
+    throw new Error('Sélection de 1 à 5 annonces requise');
+  }
+  const rows = await prisma.pigeAnnonce.findMany({
+    where: { id: { in: annonceIds }, photoUrl: null },
+    select: { id: true, sourceId: true, photosJson: true },
+  });
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  const resultats = [];
+  for (const row of rows) {
+    let galerie = row.photosJson;
+    if (typeof galerie === 'string') {
+      try { galerie = JSON.parse(galerie); } catch { galerie = []; }
+    }
+    if (!Array.isArray(galerie)) galerie = [];
+    const candidates = galerie.filter(u => {
+      if (typeof u !== 'string') return false;
+      try {
+        const parsed = new URL(u);
+        return parsed.protocol === 'https:' &&
+          (parsed.hostname === 'img.leboncoin.fr' || parsed.hostname.endsWith('.img.leboncoin.fr'));
+      } catch { return false; }
+    }).slice(0, PHOTO_GALERIE_MAX);
+    const locales = [];
+    for (let i = 0; i < candidates.length; i++) {
+      const image = await telechargerImage(candidates[i], `${row.sourceId || row.id}_restored_${i}`);
+      if (image) locales.push(image);
+    }
+    if (locales.length) {
+      await prisma.pigeAnnonce.update({
+        where: { id: row.id, photoUrl: null },
+        data: { photoUrl: locales[0], photosJson: locales },
+      });
+    }
+    resultats.push({ id: row.id, urlsTrouvees: candidates.length, telechargees: locales.length });
+  }
+  return { ok: true, sansApify: true, resultats };
+}
