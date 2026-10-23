@@ -167,6 +167,53 @@ pigeIngestRouter.get('/photos-manquantes', async (req, res) => {
   res.json(rows);
 });
 
+// Diagnostic en lecture seule des URL historiques, sans Apify ni écriture en base.
+pigeIngestRouter.post('/photos-urls-diagnostic', async (req, res) => {
+  if (!requirePigeIngestSecret(req, res)) return;
+  try {
+    const limit = Math.min(Math.max(Number(req.body?.limit) || 200, 1), 500);
+    const rows = await prisma.pigeAnnonce.findMany({
+      where: { photoUrl: null, enleve: false },
+      select: { id: true, photosJson: true },
+      take: limit,
+      orderBy: { id: 'asc' },
+    });
+    const results = [];
+    for (const row of rows) {
+      let images = row.photosJson;
+      if (typeof images === 'string') {
+        try { images = JSON.parse(images); } catch { images = []; }
+      }
+      if (!Array.isArray(images)) images = [];
+      const urls = images.filter(v => {
+        if (typeof v !== 'string') return false;
+        try {
+          const u = new URL(v);
+          return u.protocol === 'https:' && (u.hostname === 'img.leboncoin.fr' || u.hostname.endsWith('.img.leboncoin.fr'));
+        } catch { return false; }
+      });
+      let accessible = 0;
+      for (const url of urls.slice(0, 1)) {
+        try {
+          const response = await fetch(url, { signal: AbortSignal.timeout(5000), headers: { Range: 'bytes=0-1023' } });
+          if (response.ok && String(response.headers.get('content-type') || '').startsWith('image/')) accessible++;
+          await response.body?.cancel();
+        } catch {}
+      }
+      results.push({ id: row.id, urls: urls.length, imageAccessible: accessible > 0 });
+    }
+    res.json({
+      ok: true, sansApify: true, readOnly: true, analysees: results.length,
+      avecUrl: results.filter(x => x.urls > 0).length,
+      avecImageAccessible: results.filter(x => x.imageAccessible).length,
+      sansUrl: results.filter(x => x.urls === 0).length,
+      candidates: results.filter(x => x.imageAccessible).map(x => x.id),
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: String(err.message || err) });
+  }
+});
+
 // Tente de restaurer gratuitement des images depuis les URL CDN déjà sauvegardées.
 pigeIngestRouter.post('/photos-restore-local', async (req, res) => {
   if (!requirePigeIngestSecret(req, res)) return;
