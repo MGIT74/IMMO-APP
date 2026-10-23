@@ -23,15 +23,17 @@ const PHOTO_GALERIE_MAX = 15;
  */
 let enCours = null;
 
-export function backfillPhotosManquantes(limit = 100) {
+export function backfillPhotosManquantes(limit = 100, annonceIds = null) {
   if (enCours) return enCours;
-  enCours = _backfill(limit).finally(() => { enCours = null; });
+  enCours = _backfill(limit, annonceIds).finally(() => { enCours = null; });
   return enCours;
 }
 
-async function _backfill(limit = 100) {
+async function _backfill(limit = 100, annonceIds = null) {
+  const idsSelection = Array.isArray(annonceIds) ? [...new Set(annonceIds.map(Number))].filter(Number.isSafeInteger) : null;
+  if (idsSelection && (!idsSelection.length || idsSelection.length > 5)) throw new Error('Sélection limitée à 1-5 IDs');
   const rows = await prisma.pigeAnnonce.findMany({
-    where: { photoUrl: null, enleve: false },
+    where: { photoUrl: null, enleve: false, ...(idsSelection ? { id: { in: idsSelection } } : {}) },
     select: { id: true, sourceId: true, url: true },
     orderBy: { dateParution: 'desc' },
     take: limit,
