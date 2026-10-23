@@ -173,7 +173,11 @@ pigeIngestRouter.post('/photos-backfill', async (req, res) => {
   if (!requirePigeIngestSecret(req, res)) return;
   try {
     const limit = Math.min(Number(req.body?.limit) || 100, 200);
-    const r = await backfillPhotosManquantes(limit);
+    const ids = req.body?.annonceIds;
+    if (ids !== undefined && (!Array.isArray(ids) || ids.length < 1 || ids.length > 5 || !ids.every(id => Number.isSafeInteger(id) && id > 0))) {
+      return res.status(400).json({ ok: false, error: 'annonceIds doit contenir entre 1 et 5 identifiants entiers positifs.' });
+    }
+    const r = await backfillPhotosManquantes(limit, ids ?? null);
     res.json({ ok: true, ...r });
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err.message ?? err) });
