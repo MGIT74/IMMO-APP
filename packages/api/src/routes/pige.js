@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import { prisma } from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { executerRecherche, ingestParSource } from '../pige/ingest.js';
 import { backfillPhotosManquantes, restaurerPhotosExistantes } from '../pige/photos.js';
 
@@ -343,7 +343,7 @@ pigeAdminRouter.get('/recherches', async (req, res) => {
 });
 
 // Créer une recherche (source, nom, apifyInput = critères de l'actor)
-pigeAdminRouter.post('/recherches', async (req, res) => {
+pigeAdminRouter.post('/recherches', requireAdmin, async (req, res) => {
   const { nom, source, apifyInput, active } = req.body;
   if (!nom || !source || !['leboncoin', 'seloger'].includes(source)) {
     return res.status(400).json({ error: 'nom et source (leboncoin|seloger) requis.' });
@@ -356,7 +356,7 @@ pigeAdminRouter.post('/recherches', async (req, res) => {
   res.status(201).json(rech);
 });
 
-pigeAdminRouter.patch('/recherches/:id', async (req, res) => {
+pigeAdminRouter.patch('/recherches/:id', requireAdmin, async (req, res) => {
   const { nom, apifyInput, active } = req.body;
   const rech = await prisma.pigeRecherche.update({
     where: { id: Number(req.params.id) },
@@ -369,13 +369,13 @@ pigeAdminRouter.patch('/recherches/:id', async (req, res) => {
   res.json(rech);
 });
 
-pigeAdminRouter.delete('/recherches/:id', async (req, res) => {
+pigeAdminRouter.delete('/recherches/:id', requireAdmin, async (req, res) => {
   await prisma.pigeRecherche.delete({ where: { id: Number(req.params.id) } });
   res.json({ ok: true });
 });
 
 // Lancer une recherche maintenant (synchrones : attends la fin du run Apify)
-pigeAdminRouter.post('/recherches/:id/run', async (req, res) => {
+pigeAdminRouter.post('/recherches/:id/run', requireAdmin, async (req, res) => {
   try {
     const result = await executerRecherche(Number(req.params.id));
     res.json(result);
@@ -385,7 +385,7 @@ pigeAdminRouter.post('/recherches/:id/run', async (req, res) => {
 });
 
 // Convertir une annonce pigeon en fiche Bien du site (préremplie, non publiée)
-pigeAdminRouter.post('/annonces/:id/convertir', async (req, res) => {
+pigeAdminRouter.post('/annonces/:id/convertir', requireAdmin, async (req, res) => {
   const annonce = await prisma.pigeAnnonce.findUnique({
     where: { id: Number(req.params.id) },
     include: { contact: true },
