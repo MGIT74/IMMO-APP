@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, userMenus } from '../middleware/auth.js';
 
 export const authRouter = Router();
 
@@ -57,10 +57,10 @@ authRouter.post('/login', bloqueSiTropDechecs, async (req, res) => {
     expiresIn: '30d',
   });
 
-  res.json({ token, email: user.email, role: user.role });
+  res.json({ token, email: user.email, role: user.role, menus: userMenus(user) });
 });
 
 // Source de vérité du rôle pour l'interface, sans faire confiance au stockage local.
 authRouter.get('/me', requireAuth, (req, res) => {
-  res.json({ id: req.user.id, email: req.user.email, role: req.user.role });
+  res.json({ id: req.user.id, email: req.user.email, role: req.user.role, menus: userMenus(req.user) });
 });
