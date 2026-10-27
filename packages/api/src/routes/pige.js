@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import { prisma } from '../db.js';
-import { requireAuth, requireAdmin, requireMenu } from '../middleware/auth.js';
+import { requireAuth, requireAdmin, requireMenu, userMenus } from '../middleware/auth.js';
 import { executerRecherche, ingestParSource } from '../pige/ingest.js';
 import { backfillPhotosManquantes, restaurerPhotosExistantes } from '../pige/photos.js';
 
