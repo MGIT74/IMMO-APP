@@ -14,7 +14,8 @@ export default function Login() {
     const data = await api.login(email, password);
     if (data.token) {
       localStorage.setItem('immo_admin_token', data.token);
-      navigate(data.role === 'prospecteur' ? '/pige' : '/');
+      const menu = ['biens', 'pige', 'agenda', 'demandes', 'dashboard'].find(m => data.menus?.includes(m));
+      navigate(({ biens: '/', pige: '/pige', agenda: '/agenda', demandes: '/leads', dashboard: '/dashboard' })[menu] || '/no-access');
     } else {
       setError(data.error || 'Connexion impossible.');
     }
