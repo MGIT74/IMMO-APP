@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'node:path';
 
 import { authRouter } from './routes/auth.js';
+import { usersRouter } from './routes/users.js';
 import { requireAuth, requireAdmin } from './middleware/auth.js';
 import { biensPublicRouter, biensAdminRouter } from './routes/biens.js';
 import { leadsPublicRouter, leadsAdminRouter } from './routes/leads.js';
@@ -36,6 +37,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin/biens', requireAuth, requireAdmin, biensAdminRouter);
 app.use('/api/admin/leads', requireAuth, requireAdmin, leadsAdminRouter);
 app.use('/api/admin/settings', requireAuth, requireAdmin, settingsRouter);
+app.use('/api/admin/users', usersRouter);
 app.use('/api/admin/uploads', requireAuth, requireAdmin, uploadsRouter);
 app.use('/api/admin/pige', requireAuth, pigeAdminRouter);
 app.use('/api/pige', pigeIngestRouter);
