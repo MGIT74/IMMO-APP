@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import { prisma } from '../db.js';
-import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { requireAuth, requireAdmin, requireMenu } from '../middleware/auth.js';
 import { executerRecherche, ingestParSource } from '../pige/ingest.js';
 import { backfillPhotosManquantes, restaurerPhotosExistantes } from '../pige/photos.js';
 
@@ -267,7 +267,7 @@ pigeIngestRouter.post('/photos', async (req, res) => {
 });
 
 // Configuration minimale de collecte : aucune annonce, aucun contact et aucun secret.
-pigeAdminRouter.get('/schedule-config', async (req, res) => {
+pigeAdminRouter.get('/schedule-config', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const recherches = await prisma.pigeRecherche.findMany({
     where: { active: true, source: 'leboncoin' },
     select: { id: true, apifyInput: true },
@@ -289,7 +289,7 @@ const distanceKm = (aLat, aLon, bLat, bLon) => {
   return 2 * R * Math.asin(Math.sqrt(x));
 };
 
-pigeAdminRouter.get('/zone-communes', async (req, res) => {
+pigeAdminRouter.get('/zone-communes', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   try {
     const nom = String(req.query.nom || '').trim();
     const rayonKm = Math.min(50, Math.max(1, Number(req.query.rayonKm) || 20));
@@ -332,7 +332,7 @@ pigeAdminRouter.get('/zone-communes', async (req, res) => {
 /* ---------- Recherches ---------- */
 
 // Liste des recherches + compteur d'annonces
-pigeAdminRouter.get('/recherches', async (req, res) => {
+pigeAdminRouter.get('/recherches', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const recherches = await prisma.pigeRecherche.findMany({
     include: { _count: { select: { runs: true } } },
     orderBy: { createdAt: 'desc' },
@@ -343,7 +343,7 @@ pigeAdminRouter.get('/recherches', async (req, res) => {
 });
 
 // Créer une recherche (source, nom, apifyInput = critères de l'actor)
-pigeAdminRouter.post('/recherches', requireAdmin, async (req, res) => {
+pigeAdminRouter.post('/recherches', requireMenu('pige'), requireAdmin, async (req, res) => {
   const { nom, source, apifyInput, active } = req.body;
   if (!nom || !source || !['leboncoin', 'seloger'].includes(source)) {
     return res.status(400).json({ error: 'nom et source (leboncoin|seloger) requis.' });
@@ -356,7 +356,7 @@ pigeAdminRouter.post('/recherches', requireAdmin, async (req, res) => {
   res.status(201).json(rech);
 });
 
-pigeAdminRouter.patch('/recherches/:id', requireAdmin, async (req, res) => {
+pigeAdminRouter.patch('/recherches/:id', requireMenu('pige'), requireAdmin, async (req, res) => {
   const { nom, apifyInput, active } = req.body;
   const rech = await prisma.pigeRecherche.update({
     where: { id: Number(req.params.id) },
@@ -369,13 +369,13 @@ pigeAdminRouter.patch('/recherches/:id', requireAdmin, async (req, res) => {
   res.json(rech);
 });
 
-pigeAdminRouter.delete('/recherches/:id', requireAdmin, async (req, res) => {
+pigeAdminRouter.delete('/recherches/:id', requireMenu('pige'), requireAdmin, async (req, res) => {
   await prisma.pigeRecherche.delete({ where: { id: Number(req.params.id) } });
   res.json({ ok: true });
 });
 
 // Lancer une recherche maintenant (synchrones : attends la fin du run Apify)
-pigeAdminRouter.post('/recherches/:id/run', requireAdmin, async (req, res) => {
+pigeAdminRouter.post('/recherches/:id/run', requireMenu('pige'), requireAdmin, async (req, res) => {
   try {
     const result = await executerRecherche(Number(req.params.id));
     res.json(result);
@@ -385,7 +385,7 @@ pigeAdminRouter.post('/recherches/:id/run', requireAdmin, async (req, res) => {
 });
 
 // Convertir une annonce pigeon en fiche Bien du site (préremplie, non publiée)
-pigeAdminRouter.post('/annonces/:id/convertir', requireAdmin, async (req, res) => {
+pigeAdminRouter.post('/annonces/:id/convertir', requireMenu('pige'), requireAdmin, async (req, res) => {
   const annonce = await prisma.pigeAnnonce.findUnique({
     where: { id: Number(req.params.id) },
     include: { contact: true },
@@ -429,7 +429,7 @@ pigeAdminRouter.post('/annonces/:id/convertir', requireAdmin, async (req, res) =
 
 /* ---------- Annonces avec filtres ---------- */
 
-pigeAdminRouter.get('/annonces', async (req, res) => {
+pigeAdminRouter.get('/annonces', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub, depublie, avecTel, page = 1, perPage = 30 } = req.query;
 
   const where = {
@@ -467,7 +467,7 @@ pigeAdminRouter.get('/annonces', async (req, res) => {
 });
 
 // Détail d'une annonce (historique prix + événements + contact)
-pigeAdminRouter.get('/annonces/:id', async (req, res) => {
+pigeAdminRouter.get('/annonces/:id', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const annonce = await prisma.pigeAnnonce.findUnique({
     where: { id: Number(req.params.id) },
     include: {
@@ -481,7 +481,7 @@ pigeAdminRouter.get('/annonces/:id', async (req, res) => {
 });
 
 // Annonces republicées (même bien reposté plusieurs fois = vendeur motivé ou agence déguisée)
-pigeAdminRouter.get('/republications', async (req, res) => {
+pigeAdminRouter.get('/republications', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const min = Number(req.query.min || 1);
   const repubs = await prisma.pigeAnnonce.findMany({
     where: { nbRepubs: { gte: min } },
@@ -494,7 +494,7 @@ pigeAdminRouter.get('/republications', async (req, res) => {
 
 // Tension du marché par zone : temps de vente MÉDIAN sur les sorties définitives uniquement.
 // Un retrait ≠ une vente : on sépare republication / en attente / vente probable.
-pigeAdminRouter.get('/tension', async (req, res) => {
+pigeAdminRouter.get('/tension', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const rows = await prisma.pigeAnnonce.findMany({
     where: { zone: { not: null } },
     select: { zone: true, enleve: true, sort: true, dateParution: true, dateEnlevement: true, createdAt: true, nbRepubs: true },
@@ -542,7 +542,7 @@ pigeAdminRouter.get('/tension', async (req, res) => {
 });
 
 // Baisses de prix récentes (opportunités)
-pigeAdminRouter.get('/baisses-prix', async (req, res) => {
+pigeAdminRouter.get('/baisses-prix', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const jours = Number(req.query.jours || 14);
   const evts = await prisma.pigeEvenement.findMany({
     where: { type: 'baisse_prix', createdAt: { gte: new Date(Date.now() - jours * 864e5) } },
@@ -554,7 +554,7 @@ pigeAdminRouter.get('/baisses-prix', async (req, res) => {
 });
 
 // Export CSV des annonces filtrées (mêmes filtres que /annonces)
-pigeAdminRouter.get('/annonces-export', async (req, res) => {
+pigeAdminRouter.get('/annonces-export', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const { cp, ville, trans, typeBien, prixMin, prixMax, surfMin, surfMax, dpe, nouveau, rechercheId, q, statut, favori, repub } = req.query;
   const where = {
     ...(cp ? { cp: { startsWith: String(cp).slice(0, 2) } } : {}),
@@ -593,7 +593,7 @@ pigeAdminRouter.get('/annonces-export', async (req, res) => {
 
 const STATUTS = ['nouveau', 'a_contacter', 'contacte', 'interesse', 'negocie', 'archive'];
 
-pigeAdminRouter.patch('/annonces/:id/statut', async (req, res) => {
+pigeAdminRouter.patch('/annonces/:id/statut', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const { statut, noteMemo, estFavori, rappelAt } = req.body ?? {};
   if (statut !== undefined && !STATUTS.includes(statut)) {
     return res.status(400).json({ error: `statut doit être : ${STATUTS.join(', ')}` });
@@ -616,7 +616,7 @@ pigeAdminRouter.patch('/annonces/:id/statut', async (req, res) => {
 });
 
 // Ajouter une note / appel au journal
-pigeAdminRouter.post('/annonces/:id/evenements', async (req, res) => {
+pigeAdminRouter.post('/annonces/:id/evenements', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const { type, detail } = req.body ?? {};
   if (!['appel', 'note', 'tel_obtenu'].includes(type)) {
     return res.status(400).json({ error: 'type doit être : appel, note ou tel_obtenu' });
@@ -628,7 +628,7 @@ pigeAdminRouter.post('/annonces/:id/evenements', async (req, res) => {
 });
 
 /* ---------- Agenda des rappels de prospection ---------- */
-pigeAdminRouter.get('/agenda', async (req, res) => {
+pigeAdminRouter.get('/agenda', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   try {
     const annonces = await prisma.pigeAnnonce.findMany({
       where: { rappelAt: { not: null } },
@@ -642,7 +642,7 @@ pigeAdminRouter.get('/agenda', async (req, res) => {
 
 /* ---------- Runs & stats ---------- */
 
-pigeAdminRouter.get('/runs', async (req, res) => {
+pigeAdminRouter.get('/runs', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const runs = await prisma.pigeRun.findMany({
     include: { recherche: { select: { nom: true, source: true } } },
     orderBy: { startedAt: 'desc' },
@@ -651,7 +651,7 @@ pigeAdminRouter.get('/runs', async (req, res) => {
   res.json(runs);
 });
 
-pigeAdminRouter.get('/stats', async (req, res) => {
+pigeAdminRouter.get('/stats', requireMenu(path === '/agenda' ? 'agenda' : 'pige'), async (req, res) => {
   const [total, avecTel, nouveaux7j, coutTotal, parStatut, nbRepubs, baisses7j] = await Promise.all([
     prisma.pigeAnnonce.count(),
     prisma.pigeContact.count({ where: { telephone: { not: null } } }),
