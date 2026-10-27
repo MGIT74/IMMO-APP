@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom';
-import { getToken } from './lib/api.js';
+import { getToken, api } from './lib/api.js';
+import { useEffect, useState } from 'react';
 import Login from './pages/Login.jsx';
 import Biens from './pages/Biens.jsx';
 import BienForm from './pages/BienForm.jsx';
@@ -9,9 +10,16 @@ import Dashboard from './pages/Dashboard.jsx';
 import Pige from './pages/Pige.jsx';
 import Agenda from './pages/Agenda.jsx';
 
-function ProtectedRoute({ children }) {
-  if (!getToken()) return <Navigate to="/login" replace />;
-  return children;
+function ProtectedRoute({ children, adminOnly = false }) {
+  const [account, setAccount] = useState(undefined);
+  useEffect(() => {
+    if (!getToken()) { setAccount(null); return; }
+    api.get('/api/auth/me').then(setAccount).catch(() => setAccount(null));
+  }, []);
+  if (!getToken() || account === null) return <Navigate to="/login" replace />;
+  if (account === undefined) return <div style={{ padding: 32 }}>Chargement du compte…</div>;
+  if (adminOnly && account.role !== 'admin') return <Navigate to="/pige" replace />;
+  return typeof children === 'function' ? children(account) : children;
 }
 
 function IconBiens() {
@@ -53,17 +61,17 @@ function IconLogout() {
   );
 }
 
-function Shell({ children }) {
+function Shell({ children, account }) {
   return (
     <div className="shell">
       <nav className="sidebar">
         <div className="sidebar-title">Immo Admin</div>
-        <NavLink to="/" end><IconBiens /><span>Biens</span></NavLink>
-        <NavLink to="/dashboard"><IconDashboard /><span>Tableau de bord</span></NavLink>
-        <NavLink to="/leads"><IconDemandes /><span>Demandes</span></NavLink>
+        {account.role === 'admin' && <NavLink to="/" end><IconBiens /><span>Biens</span></NavLink>}
+        {account.role === 'admin' && <NavLink to="/dashboard"><IconDashboard /><span>Tableau de bord</span></NavLink>}
+        {account.role === 'admin' && <NavLink to="/leads"><IconDemandes /><span>Demandes</span></NavLink>}
         <NavLink to="/pige"><IconDemandes /><span>Pige</span></NavLink>
         <NavLink to="/agenda"><IconAgenda /><span>Agenda</span></NavLink>
-        <NavLink to="/settings"><IconReglages /><span>Réglages</span></NavLink>
+        {account.role === 'admin' && <NavLink to="/settings"><IconReglages /><span>Réglages</span></NavLink>}
         <button
           className="logout-btn"
           onClick={() => {
@@ -87,58 +95,44 @@ export default function App() {
         <Route
           path="/"
           element={
-            <ProtectedRoute>
-              <Shell><Biens /></Shell>
-            </ProtectedRoute>
+            <ProtectedRoute adminOnly>{account => <Shell account={account}><Biens /></Shell>}</ProtectedRoute>
           }
         />
         <Route
           path="/biens/new"
           element={
-            <ProtectedRoute>
-              <Shell><BienForm /></Shell>
-            </ProtectedRoute>
+            <ProtectedRoute adminOnly>{account => <Shell account={account}><BienForm /></Shell>}</ProtectedRoute>
           }
         />
         <Route
           path="/biens/:id/edit"
           element={
-            <ProtectedRoute>
-              <Shell><BienForm /></Shell>
-            </ProtectedRoute>
+            <ProtectedRoute adminOnly>{account => <Shell account={account}><BienForm /></Shell>}</ProtectedRoute>
           }
         />
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
-              <Shell><Dashboard /></Shell>
-            </ProtectedRoute>
+            <ProtectedRoute adminOnly>{account => <Shell account={account}><Dashboard /></Shell>}</ProtectedRoute>
           }
         />
         <Route
           path="/leads"
           element={
-            <ProtectedRoute>
-              <Shell><Leads /></Shell>
-            </ProtectedRoute>
+            <ProtectedRoute adminOnly>{account => <Shell account={account}><Leads /></Shell>}</ProtectedRoute>
           }
         />
         <Route
           path="/pige"
           element={
-            <ProtectedRoute>
-              <Shell><Pige /></Shell>
-            </ProtectedRoute>
+            <ProtectedRoute>{account => <Shell account={account}><Pige /></Shell>}</ProtectedRoute>
           }
         />
-        <Route path="/agenda" element={<ProtectedRoute><Shell><Agenda /></Shell></ProtectedRoute>} />
+        <Route path="/agenda" element={<ProtectedRoute adminOnly>{account => <Shell account={account}><Agenda /></Shell>}</ProtectedRoute>} />
         <Route
           path="/settings"
           element={
-            <ProtectedRoute>
-              <Shell><Settings /></Shell>
-            </ProtectedRoute>
+            <ProtectedRoute adminOnly>{account => <Shell account={account}><Settings /></Shell>}</ProtectedRoute>
           }
         />
       </Routes>
