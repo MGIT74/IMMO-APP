@@ -13,7 +13,8 @@ model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
   passwordHash String
-  role         String   @default("admin") // admin | prospecteur
+  role         String   @default("admin") // admin | agent_commercial | prospecteur | employe
+  menus        String   @default("pige,agenda") // droits explicites séparés par virgules
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 }
