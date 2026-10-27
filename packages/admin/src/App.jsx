@@ -128,7 +128,7 @@ export default function App() {
             <ProtectedRoute>{account => <Shell account={account}><Pige /></Shell>}</ProtectedRoute>
           }
         />
-        <Route path="/agenda" element={<ProtectedRoute adminOnly>{account => <Shell account={account}><Agenda /></Shell>}</ProtectedRoute>} />
+        <Route path="/agenda" element={<ProtectedRoute>{account => <Shell account={account}><Agenda /></Shell>}</ProtectedRoute>} />
         <Route
           path="/settings"
           element={
