@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'node:path';
 
 import { authRouter } from './routes/auth.js';
+import { requireAuth, requireAdmin } from './middleware/auth.js';
 import { biensPublicRouter, biensAdminRouter } from './routes/biens.js';
 import { leadsPublicRouter, leadsAdminRouter } from './routes/leads.js';
 import { likesRouter } from './routes/likes.js';
@@ -32,11 +33,11 @@ app.use('/api/likes', likesRouter);
 app.use('/api/auth', authRouter);
 
 // --- Routes admin (protégées par JWT, utilisées par l'app React) ---
-app.use('/api/admin/biens', biensAdminRouter);
-app.use('/api/admin/leads', leadsAdminRouter);
-app.use('/api/admin/settings', settingsRouter);
-app.use('/api/admin/uploads', uploadsRouter);
-app.use('/api/admin/pige', pigeAdminRouter);
+app.use('/api/admin/biens', requireAuth, requireAdmin, biensAdminRouter);
+app.use('/api/admin/leads', requireAuth, requireAdmin, leadsAdminRouter);
+app.use('/api/admin/settings', requireAuth, requireAdmin, settingsRouter);
+app.use('/api/admin/uploads', requireAuth, requireAdmin, uploadsRouter);
+app.use('/api/admin/pige', requireAuth, pigeAdminRouter);
 app.use('/api/pige', pigeIngestRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
