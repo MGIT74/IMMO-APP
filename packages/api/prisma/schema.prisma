@@ -13,6 +13,8 @@ model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
   passwordHash String
+  role         String   @default("admin") // admin | prospecteur
+  active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 }
 
