@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
+import { requireAuth } from '../middleware/auth.js';
 
 export const authRouter = Router();
 
@@ -38,7 +39,7 @@ authRouter.post('/login', bloqueSiTropDechecs, async (req, res) => {
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
+  if (!user || !user.active) {
     noteEchec(req);
     return res.status(401).json({ error: 'Identifiants incorrects.' });
   }
@@ -56,5 +57,10 @@ authRouter.post('/login', bloqueSiTropDechecs, async (req, res) => {
     expiresIn: '30d',
   });
 
-  res.json({ token, email: user.email });
+  res.json({ token, email: user.email, role: user.role });
+});
+
+// Source de vérité du rôle pour l'interface, sans faire confiance au stockage local.
+authRouter.get('/me', requireAuth, (req, res) => {
+  res.json({ id: req.user.id, email: req.user.email, role: req.user.role });
 });
