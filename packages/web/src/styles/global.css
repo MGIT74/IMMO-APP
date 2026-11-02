@@ -1317,7 +1317,7 @@ body.theme-dark .site-header .nav-luxury {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: linear-gradient(to bottom, rgba(0,0,0,.12) 0%, rgba(0,0,0,.72) 43%, rgba(0,0,0,.94) 100%), var(--footer-photo);
+  background-image: linear-gradient(to bottom, rgba(0,0,0,.05) 0%, rgba(0,0,0,.64) 46%, rgba(0,0,0,.96) 100%), url('/images/footer-haute-savoie.webp'), var(--footer-photo);
   background-size: cover;
   background-position: center 44%;
 }
