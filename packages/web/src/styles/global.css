@@ -850,7 +850,7 @@ body.nav-open { overflow: hidden; }
 
 /* --- Panneau sombre Bkeys --- */
 .bk-panel {
-	background: #101319;
+	background: #000;
 	border-radius: 32px;
 	padding: clamp(36px, 6vw, 72px) clamp(26px, 5vw, 84px);
 	color: #fff;
@@ -860,7 +860,7 @@ body.nav-open { overflow: hidden; }
 .bk-panel::after {
 	content: ""; position: absolute; right: -140px; top: -140px;
 	width: 420px; height: 420px; border-radius: 50%;
-	background: radial-gradient(circle, rgba(233,222,190,.12), transparent 65%);
+	background: none;
 	pointer-events: none;
 }
 .bk-title { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 700; font-size: clamp(28px, 3.8vw, 44px); line-height: 1.1; letter-spacing: -0.03em; max-width: 720px; margin: 0 0 40px; }
@@ -873,13 +873,13 @@ body.nav-open { overflow: hidden; }
 	padding: 34px 30px;
 	backdrop-filter: blur(6px);
 }
-.bk-card-accent { background: linear-gradient(145deg, rgba(233,222,190,.14), rgba(255,255,255,.04)); border-color: rgba(233,222,190,.25); }
+.bk-card-accent { background: rgba(255,255,255,.055); border-color: rgba(255,255,255,.1); }
 .bk-num {
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 	font-size: clamp(46px, 5.5vw, 72px);
 	font-weight: 800; line-height: 1;
 	letter-spacing: -0.03em;
-	color: #f0c96b;
+	color: #fff;
 	display: flex; align-items: baseline; gap: 8px;
 }
 .bk-num span { font-size: clamp(18px, 2vw, 26px); }
@@ -1040,7 +1040,7 @@ body.nav-open { overflow: hidden; }
 
 /* --- Footer --- */
 .site-footer {
-	background: var(--immo-dark);
+	background: #000;
 	color: #ccc;
 	padding: 70px 32px 24px;
 	margin-top: 60px;
