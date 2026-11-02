@@ -140,7 +140,7 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 
 				{hasMapView && (
 					<div class="dl-view" id="view-map" hidden>
-						<div id="detail-leaflet-map" style="width:100%;height:100%;min-height:320px;filter:grayscale(1)" role="region" aria-label="Carte de localisation du bien"></div>
+						<div id="detail-leaflet-map" style="width:100%;height:100%;min-height:320px;filter:none" role="region" aria-label="Carte de localisation du bien"></div>
 						<p id="detail-map-note" style="position:absolute;bottom:12px;left:12px;right:12px;background:#fff;color:#222;padding:7px 10px;border-radius:9px;font-size:12px;z-index:400;">Carte indicative : localisation à confirmer.</p>
 					</div>
 				)}
