@@ -11,7 +11,7 @@ const properties = biens.map((b) => ({
   description: b.description || '', images: (b.photos || []).map((p) => p.url).filter(Boolean),
 }));
 ---
-<Layout title="Exception — Collection exclusive — Ambassadeur Immo" theme="dark">
+<Layout title="Exception — Collection exclusive — Ambassadeur Immo" theme="dark" footerImage={featured?.photos?.[0]?.url || null}>
   <main class="ex-page">
     <section class="ex-hero" style={featured ? `--hero-image:url("${featured.photos[0].url.replaceAll('"','%22')}")` : ''}>
       <div class="ex-hero-content">
