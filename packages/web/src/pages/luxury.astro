@@ -2,109 +2,76 @@
 import Layout from '../components/Layout.astro';
 import { getBiens } from '../lib/api.js';
 
-const biens = await getBiens();
-const biensLuxe = biens.filter((b) => b.luxe);
+const biens = (await getBiens()).filter((b) => b.luxe);
+const featured = biens.find((b) => b.photos?.[0]?.url);
+const money = (value) => Number(value || 0).toLocaleString('fr-FR') + ' €';
+const properties = biens.map((b) => ({
+  id: String(b.id), title: b.titre || 'Bien d’exception', city: b.ville || '',
+  price: money(b.prix), surface: b.surface, rooms: b.pieces, bedrooms: b.chambres,
+  description: b.description || '', images: (b.photos || []).map((p) => p.url).filter(Boolean),
+}));
 ---
-<Layout title="Exception — Biens d'exception — Ambassadeur Immo" theme="dark">
-	<section class="luxury-hero">
-		<p class="luxury-eyebrow">— SÉLECTION EXCLUSIVE —</p>
-		<h1>Exception</h1>
-		<p class="luxury-sub">Notre sélection de biens d'exception</p>
-	</section>
+<Layout title="Exception — Collection exclusive — Ambassadeur Immo" theme="dark">
+  <main class="ex-page">
+    <section class="ex-hero" style={featured ? `--hero-image:url("${featured.photos[0].url.replaceAll('"','%22')}")` : ''}>
+      <div class="ex-hero-content">
+        <span class="ex-eyebrow">AMBASSADEUR IMMO · COLLECTION PRIVÉE</span>
+        <h1>L'immobilier<br /><em>d'exception.</em></h1>
+        <div class="ex-hero-bottom"><p>Des propriétés rares, des lieux uniques.<br />Notre sélection de biens d'exception.</p><a href="#collection" class="ex-pill">Découvrir la collection <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </section>
 
-	{biensLuxe.length === 0 ? (
-		<p class="luxury-empty">Aucun bien de la sélection Prestige pour le moment.</p>
-	) : (
-		biensLuxe.map((bien, idx) => {
-			const photos = bien.photos?.length ? bien.photos : [];
-			const cover = photos[0]?.url;
-			const planImg = photos[1]?.url || photos[0]?.url;
-			return (
-				<section class="lux-feature" data-idx={idx}>
-					<div class="lux-hero" style={cover ? `background-image:url('${cover}')` : ''}>
-						<div class="lux-hero-overlay"></div>
-						<h2 class="lux-title">{bien.titre}</h2>
-						<p class="lux-desc">{bien.description || `${bien.type || 'Bien'} d'exception à ${bien.ville || ''}.`}</p>
-					</div>
+    <section id="collection" class="ex-collection">
+      <div class="ex-heading"><div><p class="ex-eyebrow">— SÉLECTION EXCLUSIVE —</p><h2>Notre collection</h2><p>Une sélection de biens singuliers, choisis pour leur caractère.</p></div><span class="ex-count">{biens.length} {biens.length > 1 ? 'propriétés' : 'propriété'}</span></div>
+      {biens.length === 0 ? <p class="ex-empty">Notre collection se prépare. Revenez prochainement découvrir nos biens d'exception.</p> :
+      <div class="ex-grid">
+        {biens.map((bien, index) => <button class="ex-card" type="button" data-index={index} aria-label={`Découvrir ${bien.titre}`}>
+          <div class="ex-photo">{bien.photos?.[0]?.url ? <img src={bien.photos[0].url} alt={bien.titre} loading="lazy" /> : <span>Photographie à venir</span>}<span class="ex-photo-arrow" aria-hidden="true">↗</span></div>
+          <div class="ex-card-head"><h3>{bien.titre}</h3><span>{bien.ville}{bien.codePostal ? ` · ${bien.codePostal}` : ''}</span></div>
+          <div class="ex-meta"><span>{bien.chambres ? `${bien.chambres} chambres` : bien.type || 'Exception'}</span>{bien.surface && <span>{bien.surface} m²</span>}<strong>{money(bien.prix)}</strong></div>
+        </button>)}
+      </div>}
+    </section>
 
-					<div class="lux-footer">
-						<div class="lux-plan-panel">
-							<div class="lux-plan-slides">
-								{photos.length > 0 ? (
-									photos.map((p, i) => (
-										<img src={p.url} alt={bien.titre} class={`lux-plan-slide ${i === 0 ? 'is-active' : ''}`} data-i={i} />
-									))
-								) : (
-									<div class="lux-plan-placeholder"></div>
-								)}
-							</div>
-						</div>
+    <section class="ex-contact"><p class="ex-eyebrow">UNE RELATION PRIVILÉGIÉE</p><h2>Chaque propriété a<br /><em>une histoire.</em></h2><p>Vous souhaitez découvrir un bien ou nous confier votre projet immobilier ?</p><a class="ex-pill ex-pill-light" href="/#contact">Parlons de votre projet ↗</a></section>
+  </main>
 
-						<div class="lux-stats-panel">
-							<div class="lux-stats-row">
-								<div class="lux-stat">
-									<div class="lux-stat-icon">
-										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="4"/><path d="m11 11 8 8"/><path d="m17 15 3-3"/></svg>
-										<span>Livraison</span>
-									</div>
-									<div class="lux-stat-value">{bien.livraison || (bien.vendu ? 'Vendu' : 'Disponible')}</div>
-								</div>
-								<div class="lux-stat">
-									<div class="lux-stat-icon">
-										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
-										<span>Localisation</span>
-									</div>
-									<div class="lux-stat-value">{bien.ville || '—'}</div>
-								</div>
-								<div class="lux-stat">
-									<div class="lux-stat-icon">
-										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/></svg>
-										<span>Surface</span>
-									</div>
-									<div class="lux-stat-value">{bien.surface ? `${bien.surface} M²` : '—'}</div>
-								</div>
-							</div>
-
-							<div class="lux-footer-row">
-								<div class="lux-pagination">
-									<button type="button" class="lux-prev" aria-label="Photo précédente">‹</button>
-									<button type="button" class="lux-next" aria-label="Photo suivante">›</button>
-								</div>
-
-								<div class="lux-type-label">
-									{bien.type === 'Luxury' ? 'Prestige' : (bien.type || 'Bien')}<br /><span>{Number(bien.prix).toLocaleString('fr-FR')} €</span>
-								</div>
-
-								{photos.length > 1 && (
-									<div class="lux-thumbs">
-										{photos.slice(0, 3).map((p) => <img src={p.url} alt="" />)}
-									</div>
-								)}
-							</div>
-						</div>
-					</div>
-
-					<a href={`/biens/${bien.id}`} class="lux-cta">Voir la fiche complète →</a>
-				</section>
-			);
-		})
-	)}
-
-	<script>
-		document.querySelectorAll('.lux-feature').forEach((feature) => {
-			const slides = feature.querySelectorAll('.lux-plan-slide');
-			const prev = feature.querySelector('.lux-prev');
-			const next = feature.querySelector('.lux-next');
-			let current = 0;
-
-			function show(index) {
-				if (!slides.length) return;
-				current = (index + slides.length) % slides.length;
-				slides.forEach((s, i) => s.classList.toggle('is-active', i === current));
-			}
-
-			if (prev) prev.addEventListener('click', () => show(current - 1));
-			if (next) next.addEventListener('click', () => show(current + 1));
-		});
-	</script>
+  <div class="ex-overlay" id="ex-overlay" hidden role="dialog" aria-modal="true" aria-label="Présentation du bien d'exception">
+    <button type="button" class="ex-close" id="ex-close" aria-label="Fermer et revenir à la collection">✕ <span>Retour à la collection</span></button>
+    <div class="ex-stage"><img id="ex-stage-image" alt="" /><div id="ex-stage-empty" hidden>Photographie indisponible</div><div class="ex-stage-shade"></div><div class="ex-stage-info"><p id="ex-stage-city"></p><h2 id="ex-stage-title"></h2><p id="ex-stage-price"></p></div><button class="ex-arrow ex-prev" type="button" id="ex-prev" aria-label="Photo précédente">‹</button><button class="ex-arrow ex-next" type="button" id="ex-next" aria-label="Photo suivante">›</button><span class="ex-image-counter" id="ex-image-counter"></span></div>
+    <div class="ex-overlay-details"><div><p class="ex-eyebrow">COLLECTION EXCEPTION</p><h3 id="ex-detail-title"></h3><p id="ex-detail-desc"></p><p id="ex-detail-stats"></p></div><a class="ex-pill ex-pill-light" id="ex-detail-link" href="#">Découvrir la fiche complète ↗</a></div>
+  </div>
 </Layout>
+<style>
+  .ex-page{background:#050505;color:#f8f7f4;min-height:100vh}.ex-hero{min-height:min(820px,88svh);position:relative;background:#111;isolation:isolate;display:flex;align-items:end}.ex-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(0,0,0,.72),rgba(0,0,0,.08) 80%),linear-gradient(0deg,rgba(0,0,0,.72),transparent 55%),var(--hero-image);background-position:center;background-size:cover;z-index:-1}.ex-hero-content{width:min(1400px,100%);margin:auto auto 0;padding:clamp(32px,6vw,90px)}.ex-eyebrow{font-size:11px;font-weight:700;letter-spacing:.22em;color:#bcb7ae}.ex-hero h1{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(58px,8vw,138px);letter-spacing:-.055em;line-height:.98;margin:34px 0 46px}.ex-hero h1 em,.ex-contact h2 em{font-weight:400}.ex-hero-bottom{display:flex;justify-content:space-between;align-items:end;gap:30px}.ex-hero-bottom p{line-height:1.7;color:#eee;font-size:16px}.ex-pill{display:inline-flex;gap:28px;align-items:center;justify-content:center;background:#f5f3ee;color:#101010;border-radius:100px;padding:16px 25px;text-decoration:none;font-weight:700;font-size:13px;white-space:nowrap}.ex-pill:hover{background:#d8d5ce}.ex-collection{max-width:1430px;margin:auto;padding:100px 36px 130px;scroll-margin-top:85px}.ex-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:45px}.ex-heading h2{font-family:Georgia,'Times New Roman',serif;font-size:clamp(36px,5vw,68px);font-weight:400;letter-spacing:-.04em;margin:15px 0}.ex-heading>div>p:last-child{color:#999}.ex-count{color:#aaa;font-size:13px}.ex-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:55px 26px}.ex-card{display:block;width:100%;border:0;padding:0;background:none;text-align:left;color:inherit;cursor:pointer;font:inherit}.ex-photo{position:relative;aspect-ratio:1.55;background:#191919;border-radius:14px;overflow:hidden;display:grid;place-items:center;color:#999}.ex-photo img{width:100%;height:100%;object-fit:cover;transition:transform .6s}.ex-card:hover .ex-photo img{transform:scale(1.045)}.ex-photo-arrow{position:absolute;right:17px;top:17px;border-radius:50%;background:#f5f3ee;color:#111;width:40px;height:40px;display:grid;place-items:center;opacity:0;transform:translateY(5px);transition:.2s}.ex-card:hover .ex-photo-arrow,.ex-card:focus-visible .ex-photo-arrow{opacity:1;transform:none}.ex-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:15px;margin-top:16px}.ex-card-head h3{font-size:21px;font-weight:500;margin:0}.ex-card-head span{font-size:12px;color:#aaa;text-align:right}.ex-meta{display:flex;align-items:center;gap:18px;color:#a7a7a7;font-size:13px;margin-top:12px;flex-wrap:wrap}.ex-meta strong{margin-left:auto;color:#f7f7f7;font-weight:600}.ex-empty{padding:80px 0;color:#aaa}.ex-contact{text-align:center;padding:100px 20px 120px;background:#101010}.ex-contact h2{font:400 clamp(40px,6vw,80px)/1.05 Georgia,'Times New Roman',serif;letter-spacing:-.045em;margin:22px 0}.ex-contact>p:not(.ex-eyebrow){color:#aaa;margin:25px 0}.ex-pill-light{margin-top:15px}.ex-overlay[hidden]{display:none!important}.ex-overlay{position:fixed;inset:0;z-index:3000;background:#080808;color:#fff;overflow-y:auto}.ex-close{position:fixed;z-index:3100;top:24px;left:26px;border:1px solid #ffffff55;border-radius:40px;background:#111b;color:white;padding:12px 18px;cursor:pointer;backdrop-filter:blur(12px);font-size:14px}.ex-close span{margin-left:10px}.ex-stage{height:100svh;min-height:450px;position:relative;background:#171717}.ex-stage>img{width:100%;height:100%;object-fit:cover}.ex-stage-shade{position:absolute;inset:0;background:linear-gradient(0deg,#000b,transparent 65%);pointer-events:none}.ex-stage-info{position:absolute;bottom:60px;left:clamp(25px,7vw,110px);right:120px;text-shadow:0 2px 15px #0007}.ex-stage-info h2{font:400 clamp(40px,6vw,100px)/1 Georgia,'Times New Roman',serif;margin:10px 0}.ex-stage-info p{font-size:16px}.ex-arrow{position:absolute;top:50%;transform:translateY(-50%);border:1px solid #fff9;border-radius:50%;width:46px;height:46px;background:#1118;color:white;font-size:32px;cursor:pointer}.ex-prev{left:20px}.ex-next{right:20px}.ex-image-counter{position:absolute;bottom:20px;right:30px;font-size:13px}.ex-overlay-details{max-width:1250px;margin:auto;padding:85px 35px 120px;display:flex;justify-content:space-between;gap:50px;align-items:center}.ex-overlay-details h3{font:400 48px Georgia,serif;margin:20px 0}.ex-overlay-details p{max-width:680px;line-height:1.7;color:#aaa}.ex-overlay-details a{flex-shrink:0}body.ex-modal-open{overflow:hidden}
+  @media(max-width:720px){.ex-hero{min-height:72svh}.ex-hero-content{padding:35px 22px}.ex-hero h1{font-size:clamp(48px,12vw,75px)}.ex-hero-bottom{align-items:start;flex-direction:column}.ex-collection{padding:65px 20px 85px}.ex-grid{grid-template-columns:1fr;gap:35px}.ex-heading{align-items:start}.ex-card-head{display:block}.ex-card-head span{display:block;text-align:left;margin-top:7px}.ex-meta strong{margin-left:0}.ex-stage-info{left:24px;right:24px;bottom:80px}.ex-overlay-details{display:block;padding:55px 24px 90px}.ex-overlay-details h3{font-size:36px}.ex-close{left:15px;top:15px}.ex-arrow{width:40px;height:40px}.ex-prev{left:8px}.ex-next{right:8px}}
+  @media(prefers-reduced-motion:reduce){.ex-photo img,.ex-photo-arrow{transition:none}}
+</style>
+<script define:vars={{ properties }}>
+  const overlay=document.getElementById('ex-overlay');
+  const stageImage=document.getElementById('ex-stage-image');
+  let current=0,photo=0,previousFocus=null;
+  const put=(id,value)=>{document.getElementById(id).textContent=value||''};
+  function render(){
+    const p=properties[current];if(!p)return;
+    const hasPhotos=p.images.length>0;
+    stageImage.hidden=!hasPhotos;
+    document.getElementById('ex-stage-empty').hidden=hasPhotos;
+    if(hasPhotos){stageImage.src=p.images[photo];stageImage.alt=p.title+' — photo '+(photo+1)}
+    put('ex-stage-city',p.city);put('ex-stage-title',p.title);put('ex-stage-price',p.price);
+    put('ex-detail-title',p.title);put('ex-detail-desc',p.description);
+    put('ex-detail-stats',[p.surface&&p.surface+' m²',p.rooms&&p.rooms+' pièces',p.bedrooms&&p.bedrooms+' chambres'].filter(Boolean).join(' · '));
+    put('ex-image-counter',hasPhotos?(photo+1)+' / '+p.images.length:'');
+    document.getElementById('ex-prev').hidden=p.images.length<2;
+    document.getElementById('ex-next').hidden=p.images.length<2;
+    document.getElementById('ex-detail-link').href='/biens/'+encodeURIComponent(p.id);
+  }
+  function open(i){previousFocus=document.activeElement;current=i;photo=0;render();overlay.hidden=false;document.body.classList.add('ex-modal-open');document.getElementById('ex-close').focus()}
+  function close(){overlay.hidden=true;document.body.classList.remove('ex-modal-open');previousFocus?.focus()}
+  function move(delta){const count=properties[current]?.images.length||0;if(count){photo=(photo+delta+count)%count;render()}}
+  document.querySelectorAll('.ex-card').forEach(card=>card.addEventListener('click',()=>open(Number(card.dataset.index))));
+  document.getElementById('ex-close').addEventListener('click',close);
+  document.getElementById('ex-prev').addEventListener('click',()=>move(-1));
+  document.getElementById('ex-next').addEventListener('click',()=>move(1));
+  document.addEventListener('keydown',e=>{if(overlay.hidden)return;if(e.key==='Escape')close();if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1);if(e.key==='Tab'){const els=[...overlay.querySelectorAll('button:not([hidden]),a[href]')].filter(el=>el.getClientRects().length);if(!els.length)return;const first=els[0],last=els[els.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+</script>
