@@ -376,7 +376,7 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 					[lng,lat]=town.centre.coordinates;approximate=true;
 				}
 				detailMap=window.L.map('detail-leaflet-map',{scrollWheelZoom:false}).setView([lat,lng],approximate?12:15);
-				window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19}).addTo(detailMap);
+				window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(detailMap);
 				window.L.circleMarker([lat,lng],{radius:10,color:'#111',fillColor:'#111',fillOpacity:1}).addTo(detailMap);
 				note.textContent=approximate?'Position indicative au centre de la commune — adresse exacte non affichée.':'Localisation du bien.';
 				setTimeout(()=>detailMap.invalidateSize(),120);
