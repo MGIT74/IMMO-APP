@@ -110,7 +110,7 @@ const euros = (n) => Number(n || 0).toLocaleString('fr-FR') + ' €';
       const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.append(css);
       await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});
       map=L.map('map',{scrollWheelZoom:false}).setView([46.10,6.15],10);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19}).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors',maxZoom:19}).addTo(map);
       const points=locations.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&Math.abs(p.lat)<=90&&Math.abs(p.lng)<=180&&p.lat!==0&&p.lng!==0);
       const cityCache=new Map();
       for(const p of locations.filter(p=>!points.some(a=>a.id===p.id)&&p.ville)){
