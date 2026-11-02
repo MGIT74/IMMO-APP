@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-const { title = 'Ambassadeur Immo', description = '', theme = 'light', chrome = 'full' } = Astro.props;
+const { title = 'Ambassadeur Immo', description = '', theme = 'light', chrome = 'full', footerImage = null } = Astro.props;
 ---
 <!doctype html>
 <html lang="fr">
@@ -36,7 +36,7 @@ const { title = 'Ambassadeur Immo', description = '', theme = 'light', chrome = 
 	<slot />
 
 	{chrome !== 'bare' && (
-	<footer class="site-footer">
+	<footer class:list={["site-footer", footerImage && "site-footer-photo"]} style={footerImage ? `--footer-photo: url("${String(footerImage).replaceAll('"', '%22')}")` : undefined}>
 		<div class="footer-inner">
 			<div>
 				<div class="logo logo-white">Ambassadeur<span>immo</span></div>
