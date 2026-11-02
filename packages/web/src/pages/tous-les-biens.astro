@@ -80,7 +80,7 @@ const euros = (n) => Number(n || 0).toLocaleString('fr-FR') + ' €';
   .details{display:flex;justify-content:space-between;border-top:1px solid #eee;padding-top:13px;font-weight:700;font-size:12px}
   .map-panel{height:min(76vh,800px);min-height:520px;position:sticky;top:100px;border-radius:22px;overflow:hidden;background:#f3f3f3}
   #map{height:100%;width:100%;z-index:0;filter:none}
-  .map-note{position:absolute;bottom:15px;left:15px;right:15px;text-align:center;background:#ffffffec;padding:9px 12px;border-radius:12px;font-size:12px;color:#555;z-index:2}
+  .map-note[hidden]{display:none!important}.map-note{position:absolute;bottom:15px;left:15px;right:15px;text-align:center;background:#ffffffec;padding:9px 12px;border-radius:12px;font-size:12px;color:#555;z-index:2}
   .empty{padding:40px 0;color:#777}
   .catalog-layout.grid-mode{grid-template-columns:1fr}.catalog-layout.grid-mode .map-panel{display:none}.catalog-layout.grid-mode .cards{grid-template-columns:repeat(4,minmax(0,1fr))}
   .mobile-toggle{display:none}
@@ -124,7 +124,7 @@ const euros = (n) => Number(n || 0).toLocaleString('fr-FR') + ' €';
       for(const p of points){const marker=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<span style="display:block;background:#151515;color:#fff;border:2px solid #fff;border-radius:22px;padding:8px 12px;white-space:nowrap;font-size:12px;font-weight:700;box-shadow:0 2px 8px #0003">'+Math.round(p.prix).toLocaleString('fr-FR')+' €</span>',iconSize:[110,36],iconAnchor:[55,18]})});marker.bindPopup('<strong>'+String(p.titre).replace(/[&<>"']/g,'')+'</strong><br><a href="/biens/'+encodeURIComponent(p.id)+'">Voir le bien</a>');markers.push({id:p.id,marker});bounds.push([p.lat,p.lng])}
       if(bounds.length)map.fitBounds(bounds,{padding:[55,55],maxZoom:12});
       filter();
-      note.textContent=points.length? 'Positions approximatives par commune lorsque l’adresse exacte est indisponible.':'Aucune localisation disponible pour ces biens.';
+      if(points.length){note.hidden=true;}else{note.textContent='Aucune localisation disponible pour ces biens.';}
     }catch{note.textContent='La carte est momentanément indisponible. Les annonces restent accessibles.'}
   }
   initMap();
