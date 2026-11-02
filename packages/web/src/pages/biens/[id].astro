@@ -106,10 +106,10 @@ function parseVideoUrl(raw) {
 }
 const video = parseVideoUrl(bien.videoUrl);
 
-// --- Carte : lien Google Maps depuis ville + code postal ---
-const mapQuery = encodeURIComponent([bien.ville, bien.codePostal, 'France'].filter(Boolean).join(', '));
-const mapEmbedSrc = mapQuery ? `https://www.google.com/maps?q=${mapQuery}&output=embed` : null;
-const hasMapView = !!mapEmbedSrc;
+// --- Carte Leaflet : coordonnées du bien ou centre de la commune (approximatif) ---
+const mapLat = bien.latitude ?? bien.lat ?? null;
+const mapLng = bien.longitude ?? bien.lng ?? null;
+const hasMapView = !!(bien.ville || (mapLat != null && mapLng != null));
 const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (video ? 1 : 0);
 ---
 <Layout title={bien.titre} description={`Vente ${bien.type ? bien.type.toLowerCase() : 'de bien'} à ${bien.ville || ''} - ${Number(bien.prix).toLocaleString('fr-FR')} €`}>
@@ -140,13 +140,8 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 
 				{hasMapView && (
 					<div class="dl-view" id="view-map" hidden>
-						<iframe
-							src={mapEmbedSrc}
-							title={`Localisation - ${bien.titre}`}
-							loading="lazy"
-							referrerpolicy="no-referrer-when-downgrade"
-							allowfullscreen
-						></iframe>
+						<div id="detail-leaflet-map" style="width:100%;height:100%;min-height:320px;filter:grayscale(1)" role="region" aria-label="Carte de localisation du bien"></div>
+						<p id="detail-map-note" style="position:absolute;bottom:12px;left:12px;right:12px;background:#fff;color:#222;padding:7px 10px;border-radius:9px;font-size:12px;z-index:400;">Carte indicative : localisation à confirmer.</p>
 					</div>
 				)}
 
@@ -359,7 +354,34 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 		)}
 	</div>
 
-	<script define:vars={{ API_URL, bienId: bien.id }}>
+	<script define:vars={{ API_URL, bienId: bien.id, mapLat, mapLng, mapCity: bien.ville || "", mapPostal: bien.codePostal || "" }}>
+		// --- Carte Leaflet de la fiche ---
+		let detailMap = null;
+		async function showDetailMap() {
+			if (detailMap || !document.getElementById('detail-leaflet-map')) { detailMap?.invalidateSize(); return; }
+			const note = document.getElementById('detail-map-note');
+			try {
+				if (!document.querySelector('link[data-leaflet]')) {
+					const link = document.createElement('link'); link.rel='stylesheet';link.dataset.leaflet='true';link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(link);
+				}
+				if (!window.L) await new Promise((resolve,reject)=>{const js=document.createElement('script');js.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';js.onload=resolve;js.onerror=reject;document.head.appendChild(js)});
+				let lat=Number(mapLat), lng=Number(mapLng), approximate=false;
+				if (mapLat == null || mapLng == null || !Number.isFinite(lat) || !Number.isFinite(lng) || (lat===0 && lng===0)) {
+					if (!mapCity) { note.textContent='Localisation indisponible.';return; }
+					const response=await fetch('https://geo.api.gouv.fr/communes?nom='+encodeURIComponent(mapCity)+'&fields=centre,codesPostaux&format=json&geometry=centre');
+					if(!response.ok)throw new Error('Géocodage indisponible');
+					const towns=await response.json();
+					const town=towns.find(x=>mapPostal && x.codesPostaux?.includes(mapPostal))||towns[0];
+					if(!town?.centre?.coordinates)throw new Error('Commune introuvable');
+					[lng,lat]=town.centre.coordinates;approximate=true;
+				}
+				detailMap=window.L.map('detail-leaflet-map',{scrollWheelZoom:false}).setView([lat,lng],approximate?12:15);
+				window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19}).addTo(detailMap);
+				window.L.circleMarker([lat,lng],{radius:10,color:'#111',fillColor:'#111',fillOpacity:1}).addTo(detailMap);
+				note.textContent=approximate?'Position indicative au centre de la commune — adresse exacte non affichée.':'Localisation du bien.';
+				setTimeout(()=>detailMap.invalidateSize(),120);
+			} catch {note.textContent='Carte momentanément indisponible.';}
+		}
 		// --- Vue photos / plans / carte / vidéo ---
 		const toggle = document.querySelector('.dl-viewtoggle');
 		if (toggle) {
@@ -367,6 +389,7 @@ const viewsCount = 1 + (plans.length > 0 ? 1 : 0) + (hasMapView ? 1 : 0) + (vide
 				btn.addEventListener('click', () => {
 					toggle.querySelectorAll('button').forEach((b) => b.classList.toggle('is-active', b === btn));
 					const view = btn.dataset.view;
+					if (view === 'map') setTimeout(showDetailMap, 30);
 					['photos', 'plans', 'map', 'video'].forEach((v) => {
 						const el = document.getElementById('view-' + v);
 						if (el) el.hidden = v !== view;
