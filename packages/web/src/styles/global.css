@@ -1331,3 +1331,9 @@ body.theme-dark .site-header .nav-luxury {
   .site-footer.site-footer-photo { padding-top: 150px; }
   .site-footer.site-footer-photo::before { background-position: center top; }
 }
+
+/* Bas de page épuré, droits et crédit agence */
+.footer-bottom{max-width:1100px;margin:42px auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center;gap:18px;color:#b5b5b5;font-size:12px}
+.footer-bottom a{color:#fff;text-decoration:none;font-weight:700}
+.footer-bottom a:hover{text-decoration:underline}
+@media(max-width:600px){.footer-bottom{flex-direction:column;align-items:flex-start;gap:10px}}
